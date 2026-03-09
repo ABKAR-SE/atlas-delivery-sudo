@@ -165,7 +165,6 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);-webkit-font-s
     <div class="afield"><label>E-post</label><input class="ainput" id="aEmail" type="email" placeholder="admin@atlasdel.se"></div>
     <div class="afield"><label>Lösenord</label><input class="ainput" id="aPwd" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
     <button class="aprimary" id="loginBtn" onclick="doLogin()">LOGGA IN</button>
-    <div class="auth-skip" onclick="skipAuth()">Fortsätt utan konto (demoläge) →</div>
   </div>
 </div>
 
@@ -186,6 +185,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);-webkit-font-s
     <button class="ni" onclick="setPage('riders',this)"><span class="ni-icon">🛵</span>Bud</button>
     <div class="nst">System</div>
     <button class="ni" onclick="setPage('analytics',this)"><span class="ni-icon">📊</span>Analys</button>
+    <button class="ni" onclick="setPage('settings',this)"><span class="ni-icon">⚙️</span>Inställningar</button>
   </nav>
   <div class="sb-foot">
     <div>Plattform <span class="sf-v">Sverige 🇸🇪</span></div>
@@ -215,7 +215,95 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);-webkit-font-s
 <!-- TOAST -->
 <div class="toast" id="toast"><div class="td"></div><span id="toastMsg">—</span></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js">
+// ── SETTINGS PAGE ─────────────────────────────────────────────
+async function renderSettings(c) {
+  c.innerHTML = `<div class="kpi-grid" style="grid-template-columns:1fr"><div class="panel" style="max-width:540px">
+    <div class="ph"><div class="ph-title">⚙️ Leveransinställningar</div><div class="ph-sub">KONFIGURATION</div></div>
+    <div style="padding:6px 18px 18px;display:flex;flex-direction:column;gap:18px" id="settingsForm">
+      <div style="display:flex;align-items:center;justify-content:center;padding:24px;color:var(--muted);font-family:var(--fm);font-size:11px">
+        <div style="width:16px;height:16px;border:2px solid rgba(0,212,255,.2);border-top-color:var(--cyan);border-radius:50%;animation:spin .7s linear infinite;margin-right:10px"></div>LADDAR...
+      </div>
+    </div>
+  </div></div>`;
+  await loadSettingsForm();
+}
+
+async function loadSettingsForm() {
+  const { data, error } = await SB.from('settings').select('*').order('key');
+  if(error){ document.getElementById('settingsForm').innerHTML='<div style="color:var(--red);padding:16px;font-family:var(--fm);font-size:11px">Fel: '+error.message+'</div>'; return; }
+
+  const settings = {};
+  (data||[]).forEach(s => settings[s.key] = s);
+
+  document.getElementById('settingsForm').innerHTML = `
+    <div>
+      <label style="font-family:var(--fm);font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:6px">
+        ${settings['delivery_base_fee']?.label || 'Tariffa base consegna (kr)'}
+      </label>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input id="s_delivery_base_fee" type="number" value="${settings['delivery_base_fee']?.value||29}" min="0" max="200"
+          style="width:120px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--fm);font-size:14px;outline:none">
+        <span style="font-family:var(--fm);font-size:12px;color:var(--muted)">kr (alltid)</span>
+      </div>
+    </div>
+    <div>
+      <label style="font-family:var(--fm);font-size:9px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;display:block;margin-bottom:6px">
+        ${settings['delivery_per_km']?.label || 'Tariffa per km (kr)'}
+      </label>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input id="s_delivery_per_km" type="number" value="${settings['delivery_per_km']?.value||8}" min="0" max="50"
+          style="width:120px;background:var(--s2);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--fm);font-size:14px;outline:none">
+        <span style="font-family:var(--fm);font-size:12px;color:var(--muted)">kr / km</span>
+      </div>
+    </div>
+    <div style="padding:14px;background:var(--s2);border-radius:10px;border:1px solid var(--border)">
+      <div style="font-family:var(--fm);font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:8px">ANTEPRIMA CALCOLO</div>
+      <div style="font-size:13px;color:var(--text)" id="feePreview">—</div>
+    </div>
+    <button onclick="saveSettings()"
+      style="background:var(--grad);color:var(--bg);font-family:var(--fm);font-weight:600;font-size:12px;letter-spacing:.06em;padding:12px 20px;border-radius:9px;border:none;cursor:pointer;width:180px;transition:opacity .2s"
+      id="saveSettingsBtn">SPARA INSTÄLLNINGAR</button>
+    <div style="margin-top:8px;padding:12px;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.12);border-radius:10px">
+      <div style="font-family:var(--fm);font-size:9px;color:var(--muted);letter-spacing:.1em;margin-bottom:6px">STRIPE TEST MODE</div>
+      <div style="font-size:12px;color:var(--text2);line-height:1.7">
+        Publishable key: <span style="color:var(--cyan);font-family:var(--fm);font-size:10px">pk_test_51QL1pj...</span><br>
+        Checkout attivo · Pagamenti test via Stripe
+      </div>
+    </div>`;
+
+  // Live fee preview
+  const updatePreview = () => {
+    const base  = Number(document.getElementById('s_delivery_base_fee').value)||0;
+    const perKm = Number(document.getElementById('s_delivery_per_km').value)||0;
+    document.getElementById('feePreview').innerHTML =
+      `Esempio: 1 km → <b style="color:var(--cyan)">${Math.round(base + 1*perKm)} kr</b> &nbsp;|&nbsp; ` +
+      `2 km → <b style="color:var(--cyan)">${Math.round(base + 2*perKm)} kr</b> &nbsp;|&nbsp; ` +
+      `5 km → <b style="color:var(--cyan)">${Math.round(base + 5*perKm)} kr</b>`;
+  };
+  document.getElementById('s_delivery_base_fee').addEventListener('input', updatePreview);
+  document.getElementById('s_delivery_per_km').addEventListener('input', updatePreview);
+  updatePreview();
+}
+
+async function saveSettings() {
+  const base  = document.getElementById('s_delivery_base_fee').value;
+  const perKm = document.getElementById('s_delivery_per_km').value;
+  const btn = document.getElementById('saveSettingsBtn');
+  btn.disabled=true; btn.textContent='SPARAR...';
+
+  const updates = [
+    SB.from('settings').upsert({ key:'delivery_base_fee', value:String(base),  label:'Tariffa base consegna (kr)' }),
+    SB.from('settings').upsert({ key:'delivery_per_km',   value:String(perKm), label:'Tariffa per km (kr)' }),
+  ];
+  const results = await Promise.all(updates);
+  const err = results.find(r=>r.error);
+  if(err){ toast('Fel: '+err.error.message,'err'); btn.disabled=false; btn.textContent='SPARA INSTÄLLNINGAR'; return; }
+  toast('✅ Inställningar sparade!','ok');
+  btn.disabled=false; btn.textContent='SPARA INSTÄLLNINGAR';
+}
+
+</script>
 <script>
 const SB = supabase.createClient(
   'https://vgtdswplzuhbhhlmxrgg.supabase.co',
@@ -238,10 +326,6 @@ async function doLogin(){
   btn.disabled=true; btn.textContent='LOGGAR IN...'; err.className='aerr';
   const{error}=await SB.auth.signInWithPassword({email,password:pwd});
   if(error){err.textContent=error.message;err.className='aerr show';btn.disabled=false;btn.textContent='LOGGA IN';return}
-  document.getElementById('authWall').style.display='none';
-  await loadAll();
-}
-async function skipAuth(){
   document.getElementById('authWall').style.display='none';
   await loadAll();
 }
@@ -287,7 +371,7 @@ function setPage(p,el){
   page=p;
   document.querySelectorAll('.ni').forEach(b=>b.classList.remove('active'));
   if(el)el.classList.add('active');
-  const titles={dash:'Dashboard',orders:'Beställningar',restaurants:'Restauranger',riders:'Bud',analytics:'Analys'};
+  const titles={dash:'Dashboard',orders:'Beställningar',restaurants:'Restauranger',riders:'Bud',analytics:'Analys',settings:'Inställningar'};
   document.getElementById('pageTitle').textContent=titles[p]||p;
   render();
 }
@@ -301,6 +385,7 @@ function render(){
   else if(page==='orders')renderOrders(c);
   else if(page==='restaurants')renderRestaurants(c);
   else if(page==='riders')renderRiders(c);
+  else if(page==='settings')renderSettings(c);
   else renderAnalytics(c);
 }
 
