@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Atlas Delivery — Admin Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#05050C;--surface:#0C0C18;--surface2:#121220;--surface3:#18182A;
+  --border:rgba(0,212,255,0.08);--border2:rgba(255,255,255,0.05);
+  --cyan:#00D4FF;--violet:#7B2FFF;--orange:#FF6B35;--green:#00FF88;
+  --red:#FF3B3B;--yellow:#FFB800;
+  --text:#E8E8F0;--muted:#505068;
+  --font-d:'Syne',sans-serif;--font-b:'DM Sans',sans-serif;--font-m:'JetBrains Mono',monospace
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--text);font-family:var(--font-b);display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:240px;flex-shrink:0;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  position:fixed;top:0;bottom:0;left:0;z-index:50
+}
+.logo-wrap{padding:28px 22px 22px;border-bottom:1px solid var(--border)}
+.logo-eyebrow{font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:6px}
+.logo-main{font-family:var(--font-d);font-size:18px;font-weight:800;
+  background:linear-gradient(135deg,var(--cyan),var(--violet));
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.logo-sub{font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:0.12em;margin-top:4px}
+.sys-health{
+  margin:14px 22px;padding:10px 14px;
+  background:rgba(0,255,136,0.06);
+  border:1px solid rgba(0,255,136,0.2);
+  border-radius:8px;
+  display:flex;align-items:center;gap:10px
+}
+.health-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 8px var(--green);flex-shrink:0;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0.4}}
+.health-text{font-family:var(--font-m);font-size:10px;color:var(--green);letter-spacing:0.08em}
+.sidebar-nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-section{padding:14px 22px 6px;font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:0.14em;text-transform:uppercase}
+.nav-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 22px;cursor:pointer;
+  font-size:13px;color:var(--muted);
+  transition:all 0.15s;border:none;background:none;
+  width:100%;text-align:left;position:relative
+}
+.nav-item:hover{color:var(--text);background:rgba(255,255,255,0.025)}
+.nav-item.active{color:var(--cyan);background:rgba(0,212,255,0.05)}
+.nav-item.active::before{content:'';position:absolute;left:0;top:4px;bottom:4px;width:2px;background:var(--cyan);border-radius:0 2px 2px 0}
+.nav-icon{font-size:15px;width:18px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--red);color:white;font-family:var(--font-m);font-size:9px;font-weight:700;padding:2px 7px;border-radius:100px}
+.sidebar-footer{padding:16px 22px;border-top:1px solid var(--border);font-family:var(--font-m);font-size:10px;color:var(--muted)}
+.sf-row{display:flex;justify-content:space-between;margin-bottom:3px}
+.sf-val{color:var(--cyan)}
+
+/* ── MAIN ── */
+.main{margin-left:240px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{
+  height:56px;padding:0 28px;
+  background:rgba(5,5,12,0.9);backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  position:sticky;top:0;z-index:40
+}
+.breadcrumb{
+  display:flex;align-items:center;gap:8px;
+  font-family:var(--font-m);font-size:11px;color:var(--muted)
+}
+.breadcrumb-active{color:var(--text)}
+.topbar-right{display:flex;align-items:center;gap:16px}
+.topbar-clock{font-family:var(--font-m);font-size:12px;color:var(--muted);letter-spacing:0.04em}
+.admin-badge{
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface2);border:1px solid var(--border);
+  border-radius:8px;padding:6px 14px;
+  font-family:var(--font-m);font-size:11px
+}
+.admin-dot{width:6px;height:6px;border-radius:50%;background:var(--violet);box-shadow:0 0 6px var(--violet)}
+
+/* ── CONTENT ── */
+.content{padding:28px;flex:1}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.kpi{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:12px;padding:18px;position:relative;overflow:hidden;
+  cursor:default;transition:border-color 0.2s
+}
+.kpi:hover{border-color:rgba(0,212,255,0.2)}
+.kpi::after{
+  content:'';position:absolute;
+  bottom:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--c1,#00D4FF),var(--c2,#7B2FFF));
+  opacity:0.6
+}
+.kpi-label{font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:10px}
+.kpi-val{font-family:var(--font-d);font-size:30px;font-weight:800;line-height:1}
+.kpi-sub{font-family:var(--font-m);font-size:10px;margin-top:8px}
+
+/* ── TWO COL ── */
+.two-col{display:grid;grid-template-columns:1fr 340px;gap:16px;margin-bottom:16px}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+
+/* ── PANEL ── */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden}
+.ph{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.ph-title{font-family:var(--font-d);font-size:14px;font-weight:700}
+.ph-sub{font-family:var(--font-m);font-size:10px;color:var(--muted);letter-spacing:0.06em}
+.ph-action{font-family:var(--font-m);font-size:11px;color:var(--cyan);cursor:pointer;border:none;background:none}
+
+/* ── LIVE ORDERS TABLE ── */
+.table{width:100%;border-collapse:collapse}
+.table th{font-family:var(--font-m);font-size:9px;color:var(--muted);letter-spacing:0.12em;text-transform:uppercase;text-align:left;padding:10px 16px;border-bottom:1px solid var(--border)}
+.table td{padding:10px 16px;font-size:12px;border-bottom:1px solid var(--border2)}
+.table tr:last-child td{border-bottom:none}
+.table tr:hover td{background:rgba(255,255,255,0.015)}
+.status-pill{font-family:var(--font-m);font-size:9px;letter-spacing:0.08em;padding:3px 9px;border-radius:100px;font-weight:600}
+.sp-new{background:rgba(0,212,255,0.12);color:var(--cyan);border:1px solid rgba(0,212,255,0.25)}
+.sp-prep{background:rgba(255,184,0,0.12);color:var(--yellow);border:1px solid rgba(255,184,0,0.25)}
+.sp-ready{background:rgba(0,255,136,0.12);color:var(--green);border:1px solid rgba(0,255,136,0.25)}
+.sp-picked{background:rgba(123,47,255,0.12);color:#B080FF;border:1px solid rgba(123,47,255,0.25)}
+.sp-cancel{background:rgba(255,59,59,0.12);color:var(--red);border:1px solid rgba(255,59,59,0.25)}
+.td-id{font-family:var(--font-m);font-size:11px;color:var(--cyan)}
+.td-amount{font-family:var(--font-m);font-size:11px}
+.td-time{font-family:var(--font-m);font-size:10px;color:var(--muted)}
+
+/* ── MINI LIST ── */
+.mini-item{padding:12px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:12px}
+.mini-item:last-child{border-bottom:none}
+.mini-rank{font-family:var(--font-m);font-size:11px;color:var(--muted);width:16px}
+.mini-emoji{font-size:20px;width:32px;text-align:center}
+.mini-info{flex:1}
+.mini-name{font-size:13px;font-weight:500}
+.mini-meta{font-family:var(--font-m);font-size:10px;color:var(--muted);margin-top:2px}
+.mini-val{font-family:var(--font-m);font-size:12px;color:var(--cyan);text-align:right}
+.mini-bar{width:60px;height:4px;background:var(--surface2);border-radius:100px;margin-top:4px;overflow:hidden}
+.mini-bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--cyan),var(--violet))}
+
+/* ── MAP PLACEHOLDER ── */
+.map-ph{
+  height:220px;
+  background:radial-gradient(ellipse at 50% 50%,rgba(0,212,255,0.03) 0%,transparent 70%),
+    var(--surface2);
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden
+}
+.map-grid{
+  position:absolute;inset:0;
+  background-image:linear-gradient(rgba(0,212,255,0.04) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,212,255,0.04) 1px,transparent 1px);
+  background-size:40px 40px
+}
+.map-dot{position:absolute;width:10px;height:10px;border-radius:50%;cursor:pointer}
+.map-dot::before{content:'';position:absolute;inset:-4px;border-radius:50%;opacity:0.3;animation:ripple 2s infinite}
+@keyframes ripple{0%{transform:scale(1);opacity:0.4}100%{transform:scale(2.5);opacity:0}}
+.map-dot.cyan{background:var(--cyan)}
+.map-dot.cyan::before{background:var(--cyan)}
+.map-dot.orange{background:var(--orange)}
+.map-dot.orange::before{background:var(--orange)}
+.map-dot.green{background:var(--green)}
+.map-dot.green::before{background:var(--green)}
+.map-legend{position:absolute;bottom:12px;left:12px;display:flex;gap:12px}
+.map-leg-item{display:flex;align-items:center;gap:5px;font-family:var(--font-m);font-size:9px;color:var(--muted)}
+.map-leg-dot{width:7px;height:7px;border-radius:50%}
+
+/* ── CHART ── */
+.bar-chart{padding:16px 20px 20px}
+.bar-row{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.bar-label{font-family:var(--font-m);font-size:10px;color:var(--muted);width:30px;text-align:right;flex-shrink:0}
+.bar-track{flex:1;height:9px;background:var(--surface2);border-radius:100px;overflow:hidden}
+.bar-fill{height:100%;border-radius:100px;background:linear-gradient(90deg,var(--cyan),var(--violet));transition:width 1.2s cubic-bezier(0.4,0,0.2,1)}
+.bar-num{font-family:var(--font-m);font-size:10px;color:var(--muted);width:55px;text-align:right;flex-shrink:0}
+
+/* ── ALERTS ── */
+.alert-item{padding:12px 20px;border-bottom:1px solid var(--border2);display:flex;align-items:flex-start;gap:10px}
+.alert-item:last-child{border-bottom:none}
+.alert-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.alert-content .title{font-size:12px;font-weight:600;margin-bottom:2px}
+.alert-content .desc{font-size:11px;color:var(--muted)}
+.alert-time{font-family:var(--font-m);font-size:9px;color:var(--muted);white-space:nowrap;margin-left:auto}
+
+/* ── TABS ── */
+.tabs{display:flex;gap:4px;padding:8px;background:var(--surface2);border-radius:10px;margin-bottom:16px}
+.tab{font-family:var(--font-m);font-size:11px;padding:7px 16px;border-radius:7px;cursor:pointer;border:none;background:none;color:var(--muted);letter-spacing:0.04em;transition:all 0.15s}
+.tab.active{background:var(--surface3);color:var(--cyan);border:1px solid rgba(0,212,255,0.2)}
+.tab:hover:not(.active){color:var(--text)}
+
+/* ── NOTIF ── */
+.notif{position:fixed;top:66px;right:20px;z-index:200;background:var(--surface);border:1px solid rgba(0,212,255,0.3);border-radius:12px;padding:12px 18px;display:flex;align-items:center;gap:10px;transform:translateX(330px);transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1)}
+.notif.show{transform:translateX(0)}
+.notif-dot{width:7px;height:7px;border-radius:50%;background:var(--cyan);box-shadow:0 0 8px var(--cyan)}
+
+@media(max-width:900px){
+  .sidebar{display:none}.main{margin-left:0}
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .two-col,.three-col{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="logo-wrap">
+    <div class="logo-eyebrow">Abkär-SE / Atlas Valley</div>
+    <div class="logo-main">Atlas Delivery</div>
+    <div class="logo-sub">// ADMIN PANEL v1.0</div>
+  </div>
+  <div class="sys-health">
+    <div class="health-dot"></div>
+    <div class="health-text">ALLA SYSTEM OPERATIVA</div>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Överblick</div>
+    <button class="nav-item active" onclick="setPage('dashboard',this)"><span class="nav-icon">⬡</span> Dashboard</button>
+    <button class="nav-item" onclick="setPage('orders',this)"><span class="nav-icon">📋</span> Beställningar <span class="nav-badge">7</span></button>
+
+    <div class="nav-section">Plattform</div>
+    <button class="nav-item" onclick="setPage('restaurants',this)"><span class="nav-icon">🍽️</span> Restauranger</button>
+    <button class="nav-item" onclick="setPage('riders',this)"><span class="nav-icon">🛵</span> Bud</button>
+    <button class="nav-item" onclick="setPage('users',this)"><span class="nav-icon">👥</span> Användare</button>
+
+    <div class="nav-section">System</div>
+    <button class="nav-item" onclick="setPage('analytics',this)"><span class="nav-icon">📊</span> Analys</button>
+    <button class="nav-item" onclick="setPage('settings',this)"><span class="nav-icon">⚙️</span> Inställningar</button>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sf-row"><span>Plattform</span><span class="sf-val">Sverige 🇸🇪</span></div>
+    <div class="sf-row"><span>Version</span><span class="sf-val">1.0.0-beta</span></div>
+    <div class="sf-row"><span>Uptime</span><span class="sf-val">99.8%</span></div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="breadcrumb">
+      Atlas Delivery <span style="color:var(--border2)"> / </span>
+      <span class="breadcrumb-active" id="pageTitle">Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-clock" id="clock">--:--:--</div>
+      <div class="admin-badge">
+        <div class="admin-dot"></div>
+        <span>Admin</span>
+      </div>
+    </div>
+  </div>
+  <div class="content" id="content"></div>
+</div>
+
+<!-- NOTIF -->
+<div class="notif" id="notif">
+  <div class="notif-dot"></div>
+  <span style="font-size:12px" id="notifMsg">—</span>
+</div>
+
+<script>
+let currentPage = 'dashboard';
+
+// ── CLOCK ──
+function tick(){
+  const n=new Date();
+  document.getElementById('clock').textContent=
+    n.getHours().toString().padStart(2,'0')+':'+
+    n.getMinutes().toString().padStart(2,'0')+':'+
+    n.getSeconds().toString().padStart(2,'0');
+}
+tick();setInterval(tick,1000);
+
+// ── NAV ──
+function setPage(p,el){
+  currentPage=p;
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  if(el) el.classList.add('active');
+  const titles={dashboard:'Dashboard',orders:'Beställningar',restaurants:'Restauranger',riders:'Bud',users:'Användare',analytics:'Analys',settings:'Inställningar'};
+  document.getElementById('pageTitle').textContent=titles[p]||p;
+  render();
+}
+
+// ── DATA ──
+const liveOrders=[
+  {id:'ORD-2401',rest:'Norrmalm Sushi',customer:'Erik L.',rider:'Marcus K.',amount:355,status:'new',time:'14:32'},
+  {id:'ORD-2400',rest:'Gamla Stan Pizza',customer:'Sara J.',rider:'Anna P.',amount:145,status:'preparing',time:'14:20'},
+  {id:'ORD-2399',rest:'Södermalm Burger',customer:'Mikael B.',rider:'Johan S.',amount:230,status:'ready',time:'14:08'},
+  {id:'ORD-2398',rest:'Kungsholmen Kebab',customer:'Anna P.',rider:'Lisa N.',amount:89,status:'picked',time:'13:55'},
+  {id:'ORD-2397',rest:'Vasastan Bowls',customer:'Kalle M.',rider:'—',amount:149,status:'new',time:'13:45'},
+  {id:'ORD-2396',rest:'Östermalm Dim Sum',customer:'Frida H.',rider:'Marcus K.',amount:200,status:'cancel',time:'13:30'},
+];
+
+const topRests=[
+  {name:'Norrmalm Sushi',emoji:'🍱',orders:47,revenue:8140,pct:100},
+  {name:'Södermalm Burger',emoji:'🍔',orders:38,revenue:5510,pct:68},
+  {name:'Gamla Stan Pizza',emoji:'🍕',orders:31,revenue:4495,pct:55},
+  {name:'Kungsholmen Kebab',emoji:'🥙',orders:29,revenue:2581,pct:32},
+];
+
+const riders=[
+  {name:'Marcus Karlsson',orders:12,rating:4.9,status:'active'},
+  {name:'Anna Pettersson',orders:9,rating:4.7,status:'active'},
+  {name:'Johan Svensson',orders:11,rating:4.8,status:'delivering'},
+  {name:'Lisa Nilsson',orders:7,rating:4.6,status:'idle'},
+  {name:'Erik Bergström',orders:14,rating:4.9,status:'delivering'},
+];
+
+const weekData=[
+  {d:'Mån',v:42},{d:'Tis',v:61},{d:'Ons',v:48},
+  {d:'Tor',v:75},{d:'Fre',v:110},{d:'Lör',v:143},{d:'Sön',v:95},
+];
+const maxW=Math.max(...weekData.map(d=>d.v));
+
+const alerts=[
+  {icon:'⚠️',title:'Restaurang offline',desc:'Vasastan Bowls — ej nåbar sedan 20 min',time:'14:28'},
+  {icon:'🛵',title:'Bud fördröjning',desc:'ORD-2393 — +15 min estimerad tid',time:'14:15'},
+  {icon:'✅',title:'Ny restaurang godkänd',desc:'Fridhemsplan Thai — aktiverad',time:'13:50'},
+  {icon:'💳',title:'Betalningsfel',desc:'ORD-2391 — Stripe webhook miss',time:'13:20'},
+];
+
+// ── RENDER ──
+function render(){
+  const c=document.getElementById('content');
+  if(currentPage==='dashboard') renderDash(c);
+  else if(currentPage==='orders') renderOrders(c);
+  else if(currentPage==='restaurants') renderRestaurants(c);
+  else if(currentPage==='riders') renderRiders(c);
+  else if(currentPage==='users') renderUsers(c);
+  else if(currentPage==='analytics') renderAnalytics(c);
+  else if(currentPage==='settings') renderSettings(c);
+}
+
+function renderDash(c){
+  c.innerHTML=`
+    <div class="kpi-grid">
+      <div class="kpi" style="--c1:#00D4FF;--c2:#7B2FFF">
+        <div class="kpi-label">Idag — Intäkter</div>
+        <div class="kpi-val">20 875 kr</div>
+        <div class="kpi-sub" style="color:var(--green)">▲ 14% vs igår</div>
+      </div>
+      <div class="kpi" style="--c1:#00FF88;--c2:#00D4FF">
+        <div class="kpi-label">Beställningar idag</div>
+        <div class="kpi-val">143</div>
+        <div class="kpi-sub" style="color:var(--green)">▲ 22 vs igår</div>
+      </div>
+      <div class="kpi" style="--c1:#FFB800;--c2:#FF6B35">
+        <div class="kpi-label">Aktiva bud</div>
+        <div class="kpi-val">18</div>
+        <div class="kpi-sub" style="color:var(--muted)">5 lediga just nu</div>
+      </div>
+      <div class="kpi" style="--c1:#7B2FFF;--c2:#FF3B3B">
+        <div class="kpi-label">Aktiva restauranger</div>
+        <div class="kpi-val">24</div>
+        <div class="kpi-sub" style="color:var(--muted)">1 offline — varning</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="panel">
+        <div class="ph">
+          <div>
+            <div class="ph-title">Live beställningar</div>
+            <div class="ph-sub">UPPDATERAS I REALTID</div>
+          </div>
+          <button class="ph-action" onclick="render()">↺ Uppdatera</button>
+        </div>
+        <table class="table">
+          <thead><tr>
+            <th>Order-ID</th><th>Restaurang</th><th>Kund</th><th>Bud</th><th>Belopp</th><th>Status</th><th>Tid</th>
+          </tr></thead>
+          <tbody>
+          ${liveOrders.map(o=>`
+            <tr>
+              <td class="td-id">${o.id}</td>
+              <td style="font-size:12px">${o.rest}</td>
+              <td style="font-size:12px">${o.customer}</td>
+              <td style="font-size:12px;color:var(--muted)">${o.rider}</td>
+              <td class="td-amount">${o.amount} kr</td>
+              <td><span class="status-pill sp-${o.status}">${{new:'NY',preparing:'TILLAGAS',ready:'KLAR',picked:'HÄMTAD',cancel:'ANNULLERAD'}[o.status]}</span></td>
+              <td class="td-time">${o.time}</td>
+            </tr>
+          `).join('')}
+          </tbody>
+        </table>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="panel">
+          <div class="ph"><div class="ph-title">Systemvarningar</div><span class="nav-badge">${alerts.length}</span></div>
+          ${alerts.map(a=>`
+            <div class="alert-item">
+              <div class="alert-icon">${a.icon}</div>
+              <div class="alert-content">
+                <div class="title">${a.title}</div>
+                <div class="desc">${a.desc}</div>
+              </div>
+              <div class="alert-time">${a.time}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="three-col" style="margin-top:16px">
+      <div class="panel">
+        <div class="ph"><div class="ph-title">Topp restauranger</div><div class="ph-sub">DENNA VECKA</div></div>
+        ${topRests.map((r,i)=>`
+          <div class="mini-item">
+            <div class="mini-rank">${i+1}</div>
+            <div class="mini-emoji">${r.emoji}</div>
+            <div class="mini-info">
+              <div class="mini-name">${r.name}</div>
+              <div class="mini-meta">${r.orders} ordrar</div>
+              <div class="mini-bar"><div class="mini-bar-fill" style="width:${r.pct}%"></div></div>
+            </div>
+            <div class="mini-val">${r.revenue} kr</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="panel">
+        <div class="ph"><div class="ph-title">Ordrar per dag</div><div class="ph-sub">DENNA VECKA</div></div>
+        <div class="bar-chart">
+          ${weekData.map(d=>`
+            <div class="bar-row">
+              <div class="bar-label">${d.d}</div>
+              <div class="bar-track"><div class="bar-fill" style="width:${(d.v/maxW*100).toFixed(0)}%"></div></div>
+              <div class="bar-num">${d.v} ord.</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><div class="ph-title">Bud — Live</div></div>
+        ${riders.map(r=>`
+          <div class="mini-item">
+            <div style="font-size:18px">🛵</div>
+            <div class="mini-info">
+              <div class="mini-name" style="font-size:12px">${r.name}</div>
+              <div class="mini-meta">${r.orders} ordrar • ⭐${r.rating}</div>
+            </div>
+            <div style="font-family:var(--font-m);font-size:9px;padding:3px 8px;border-radius:100px;${
+              r.status==='active'?'background:rgba(0,255,136,0.1);color:var(--green);border:1px solid rgba(0,255,136,0.25)':
+              r.status==='delivering'?'background:rgba(0,212,255,0.1);color:var(--cyan);border:1px solid rgba(0,212,255,0.25)':
+              'background:rgba(90,90,120,0.1);color:var(--muted);border:1px solid rgba(90,90,120,0.25)'
+            }">${r.status==='active'?'AKTIV':r.status==='delivering'?'LEVERERAR':'LEDIG'}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+
+    <div class="panel" style="margin-top:16px">
+      <div class="ph"><div class="ph-title">Live karta — Stockholm</div><div class="ph-sub">SIMULERAD</div></div>
+      <div class="map-ph">
+        <div class="map-grid"></div>
+        ${[
+          {x:30,y:40,c:'cyan'},{x:55,y:25,c:'cyan'},{x:70,y:55,c:'orange'},
+          {x:20,y:65,c:'orange'},{x:80,y:30,c:'green'},{x:45,y:70,c:'orange'},
+          {x:60,y:45,c:'cyan'},{x:35,y:20,c:'green'},
+        ].map(d=>`<div class="map-dot ${d.c}" style="left:${d.x}%;top:${d.y}%"></div>`).join('')}
+        <div class="map-legend">
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:var(--cyan)"></div>Restaurang</div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:var(--orange)"></div>Bud</div>
+          <div class="map-leg-item"><div class="map-leg-dot" style="background:var(--green)"></div>Levererad</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderOrders(c){
+  c.innerHTML=`
+    <div class="tabs">
+      <button class="tab active">Alla (${liveOrders.length})</button>
+      <button class="tab">Nya (${liveOrders.filter(o=>o.status==='new').length})</button>
+      <button class="tab">Aktiva</button>
+      <button class="tab">Levererade</button>
+      <button class="tab">Annullerade</button>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="ph-title">Alla beställningar</div><div class="ph-sub">IDAG</div></div>
+      <table class="table">
+        <thead><tr><th>Order-ID</th><th>Restaurang</th><th>Kund</th><th>Bud</th><th>Belopp</th><th>Status</th><th>Tid</th><th>Åtgärd</th></tr></thead>
+        <tbody>
+        ${liveOrders.map(o=>`
+          <tr>
+            <td class="td-id">${o.id}</td>
+            <td style="font-size:12px">${o.rest}</td>
+            <td style="font-size:12px">${o.customer}</td>
+            <td style="font-size:12px;color:var(--muted)">${o.rider}</td>
+            <td class="td-amount">${o.amount} kr</td>
+            <td><span class="status-pill sp-${o.status}">${{new:'NY',preparing:'TILLAGAS',ready:'KLAR',picked:'HÄMTAD',cancel:'ANNULLERAD'}[o.status]}</span></td>
+            <td class="td-time">${o.time}</td>
+            <td><button style="font-family:var(--font-m);font-size:10px;color:var(--cyan);background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:6px;padding:4px 10px;cursor:pointer" onclick="showNotif('Detaljer för ${o.id}')">Visa</button></td>
+          </tr>
+        `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderRestaurants(c){
+  const rests=[
+    {name:'Norrmalm Sushi',emoji:'🍱',orders:47,revenue:8140,status:'open',rating:4.8},
+    {name:'Södermalm Burger Co.',emoji:'🍔',orders:38,revenue:5510,status:'open',rating:4.6},
+    {name:'Gamla Stan Pizza',emoji:'🍕',orders:31,revenue:4495,status:'open',rating:4.7},
+    {name:'Kungsholmen Kebab',emoji:'🥙',orders:29,revenue:2581,status:'open',rating:4.5},
+    {name:'Vasastan Bowls',emoji:'🥗',orders:22,revenue:2970,status:'offline',rating:4.9},
+    {name:'Östermalm Dim Sum',emoji:'🥡',orders:18,revenue:3600,status:'open',rating:4.7},
+  ];
+  c.innerHTML=`
+    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi" style="--c1:#00D4FF;--c2:#7B2FFF">
+        <div class="kpi-label">Totalt restauranger</div><div class="kpi-val">24</div>
+        <div class="kpi-sub" style="color:var(--muted)">+3 denna månaden</div>
+      </div>
+      <div class="kpi" style="--c1:#00FF88;--c2:#00D4FF">
+        <div class="kpi-label">Öppna nu</div><div class="kpi-val">23</div>
+        <div class="kpi-sub" style="color:var(--red)">1 offline</div>
+      </div>
+      <div class="kpi" style="--c1:#FFB800;--c2:#FF6B35">
+        <div class="kpi-label">Ansökningar</div><div class="kpi-val">5</div>
+        <div class="kpi-sub" style="color:var(--yellow)">Väntar godkännande</div>
+      </div>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="ph-title">Restauranger</div><button class="ph-action" onclick="showNotif('Lägg till restaurang — ansluts till backend')">+ Lägg till</button></div>
+      <table class="table">
+        <thead><tr><th></th><th>Restaurang</th><th>Ordrar (7d)</th><th>Intäkter</th><th>Betyg</th><th>Status</th><th>Åtgärd</th></tr></thead>
+        <tbody>
+        ${rests.map(r=>`
+          <tr>
+            <td style="font-size:22px;padding:8px 16px">${r.emoji}</td>
+            <td style="font-size:13px;font-weight:500">${r.name}</td>
+            <td class="td-amount">${r.orders}</td>
+            <td class="td-amount">${r.revenue} kr</td>
+            <td style="font-size:12px">⭐ ${r.rating}</td>
+            <td><span class="status-pill ${r.status==='open'?'sp-ready':'sp-cancel'}">${r.status==='open'?'ÖPPEN':'OFFLINE'}</span></td>
+            <td style="display:flex;gap:6px;padding:8px 16px">
+              <button style="font-family:var(--font-m);font-size:10px;color:var(--cyan);background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:6px;padding:4px 8px;cursor:pointer">Redigera</button>
+              ${r.status==='offline'?`<button style="font-family:var(--font-m);font-size:10px;color:var(--yellow);background:rgba(255,184,0,0.06);border:1px solid rgba(255,184,0,0.2);border-radius:6px;padding:4px 8px;cursor:pointer" onclick="showNotif('Kontaktar ${r.name}...')">Kontakta</button>`:''}
+            </td>
+          </tr>
+        `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderRiders(c){
+  const allRiders=[
+    {name:'Marcus Karlsson',orders:12,rating:4.9,status:'delivering',area:'Norrmalm'},
+    {name:'Anna Pettersson',orders:9,rating:4.7,status:'active',area:'Södermalm'},
+    {name:'Johan Svensson',orders:11,rating:4.8,status:'delivering',area:'Östermalm'},
+    {name:'Lisa Nilsson',orders:7,rating:4.6,status:'idle',area:'Kungsholmen'},
+    {name:'Erik Bergström',orders:14,rating:4.9,status:'delivering',area:'Vasastan'},
+    {name:'Sofia Lindqvist',orders:5,rating:4.5,status:'active',area:'Gamla stan'},
+  ];
+  c.innerHTML=`
+    <div class="kpi-grid" style="grid-template-columns:repeat(4,1fr)">
+      <div class="kpi" style="--c1:#00D4FF;--c2:#7B2FFF"><div class="kpi-label">Totalt bud</div><div class="kpi-val">18</div><div class="kpi-sub" style="color:var(--muted)">Registrerade</div></div>
+      <div class="kpi" style="--c1:#00FF88;--c2:#00D4FF"><div class="kpi-label">Levererar nu</div><div class="kpi-val">11</div><div class="kpi-sub" style="color:var(--green)">Aktiva</div></div>
+      <div class="kpi" style="--c1:#FFB800;--c2:#FF6B35"><div class="kpi-label">Lediga</div><div class="kpi-val">5</div><div class="kpi-sub" style="color:var(--muted)">Väntar på order</div></div>
+      <div class="kpi" style="--c1:#7B2FFF;--c2:#FF3B3B"><div class="kpi-label">Snittbetyg</div><div class="kpi-val">4.8</div><div class="kpi-sub" style="color:var(--green)">▲ 0.1 denna månaden</div></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="ph-title">Alla bud</div><button class="ph-action" onclick="showNotif('Bjud in bud — ansluts till backend')">+ Bjud in</button></div>
+      <table class="table">
+        <thead><tr><th></th><th>Namn</th><th>Ordrar idag</th><th>Betyg</th><th>Område</th><th>Status</th></tr></thead>
+        <tbody>
+        ${allRiders.map(r=>`
+          <tr>
+            <td style="font-size:20px;padding:8px 16px">🛵</td>
+            <td style="font-size:13px;font-weight:500">${r.name}</td>
+            <td class="td-amount">${r.orders}</td>
+            <td style="font-size:12px">⭐ ${r.rating}</td>
+            <td style="font-size:12px;color:var(--muted)">${r.area}</td>
+            <td><span class="status-pill ${r.status==='delivering'?'sp-prep':r.status==='active'?'sp-ready':'sp-picked'}">${r.status==='delivering'?'LEVERERAR':r.status==='active'?'AKTIV':'LEDIG'}</span></td>
+          </tr>
+        `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderUsers(c){
+  c.innerHTML=`
+    <div class="kpi-grid" style="grid-template-columns:repeat(3,1fr)">
+      <div class="kpi" style="--c1:#00D4FF;--c2:#7B2FFF"><div class="kpi-label">Registrerade användare</div><div class="kpi-val">1 247</div><div class="kpi-sub" style="color:var(--green)">▲ 43 denna veckan</div></div>
+      <div class="kpi" style="--c1:#00FF88;--c2:#00D4FF"><div class="kpi-label">Aktiva (30d)</div><div class="kpi-val">892</div><div class="kpi-sub" style="color:var(--muted)">71.5% retention</div></div>
+      <div class="kpi" style="--c1:#FFB800;--c2:#FF6B35"><div class="kpi-label">Snittordrar/användare</div><div class="kpi-val">3.2</div><div class="kpi-sub" style="color:var(--muted)">Per månad</div></div>
+    </div>
+    <div class="panel">
+      <div class="ph"><div class="ph-title">Senaste användare</div></div>
+      <table class="table">
+        <thead><tr><th>Namn</th><th>E-post</th><th>Ordrar</th><th>Totalt spenderat</th><th>Registrerad</th></tr></thead>
+        <tbody>
+        ${[
+          ['Erik Lindgren','erik.l@email.se',8,1420,'2026-02-14'],
+          ['Sara Johansson','sara.j@email.se',12,2055,'2026-01-28'],
+          ['Mikael Björk','mikael.b@email.se',3,515,'2026-03-01'],
+          ['Anna Persson','anna.p@email.se',19,3280,'2025-11-15'],
+          ['Kalle Magnusson','kalle.m@email.se',6,1035,'2026-02-20'],
+        ].map(u=>`
+          <tr>
+            <td style="font-size:13px;font-weight:500">👤 ${u[0]}</td>
+            <td style="font-size:12px;color:var(--muted)">${u[1]}</td>
+            <td class="td-amount">${u[2]}</td>
+            <td class="td-amount">${u[3]} kr</td>
+            <td class="td-time">${u[4]}</td>
+          </tr>
+        `).join('')}
+        </tbody>
+      </table>
+    </div>
+  `;
+}
+
+function renderAnalytics(c){
+  c.innerHTML=`
+    <div class="kpi-grid">
+      <div class="kpi" style="--c1:#00D4FF;--c2:#7B2FFF"><div class="kpi-label">Total GMV (mars)</div><div class="kpi-val">48 200 kr</div><div class="kpi-sub" style="color:var(--green)">▲ 31% vs feb</div></div>
+      <div class="kpi" style="--c1:#00FF88;--c2:#00D4FF"><div class="kpi-label">Ordrar (mars)</div><div class="kpi-val">284</div><div class="kpi-sub" style="color:var(--green)">▲ 52 vs feb</div></div>
+      <div class="kpi" style="--c1:#FFB800;--c2:#FF6B35"><div class="kpi-label">Snitt ordervärde</div><div class="kpi-val">170 kr</div><div class="kpi-sub" style="color:var(--muted)">Stabil</div></div>
+      <div class="kpi" style="--c1:#7B2FFF;--c2:#FF3B3B"><div class="kpi-label">Plattformsavgift</div><div class="kpi-val">0 kr</div><div class="kpi-sub" style="color:var(--cyan)">Atlas-modell: 0%</div></div>
+    </div>
+    <div class="two-col">
+      <div class="panel">
+        <div class="ph"><div class="ph-title">Intäkter per vecka (mars)</div></div>
+        <div class="bar-chart">
+          ${[{d:'V9',v:9200},{d:'V10',v:12400},{d:'V11',v:15100},{d:'V12',v:11500}].map(d=>`
+            <div class="bar-row">
+              <div class="bar-label">${d.d}</div>
+              <div class="bar-track"><div class="bar-fill" style="width:${(d.v/15100*100).toFixed(0)}%"></div></div>
+              <div class="bar-num">${d.v} kr</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph"><div class="ph-title">Atlas Valley — Uppdrag</div></div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:16px">
+          ${[
+            ['Matplatser nådda','1 247','👤'],
+            ['Ordrar utan pålägg','284','🚫'],
+            ['Sparade kr för kunder','~8 500 kr','💚'],
+            ['Restauranger utan provision','24','🤝'],
+          ].map(([label,val,icon])=>`
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--surface2);border-radius:10px;border:1px solid var(--border)">
+              <div style="display:flex;align-items:center;gap:10px">
+                <span style="font-size:20px">${icon}</span>
+                <span style="font-size:13px;color:var(--muted)">${label}</span>
+              </div>
+              <span style="font-family:var(--font-m);font-size:14px;color:var(--cyan)">${val}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSettings(c){
+  c.innerHTML=`
+    <div style="max-width:560px;display:flex;flex-direction:column;gap:20px">
+      <div class="panel">
+        <div class="ph"><div class="ph-title">Plattformsinställningar</div></div>
+        <div style="padding:20px;display:flex;flex-direction:column;gap:14px">
+          ${[
+            ['Plattformsnamn','Atlas Delivery'],
+            ['Aktiv region','Sverige (SE)'],
+            ['Leveransavgift','0 kr (Atlas-modell)'],
+            ['Serviceavgift för restauranger','0%'],
+            ['Support-e-post','support@atlasdelivery.se'],
+          ].map(([l,v])=>`
+            <div>
+              <div style="font-family:var(--font-m);font-size:10px;color:var(--muted);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:5px">${l}</div>
+              <input value="${v}" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:9px 14px;color:var(--text);font-family:var(--font-b);font-size:13px;outline:none" onfocus="this.style.borderColor='rgba(0,212,255,0.4)'" onblur="this.style.borderColor='var(--border)'">
+            </div>
+          `).join('')}
+          <button style="margin-top:6px;background:linear-gradient(135deg,var(--cyan),var(--violet));color:#07070E;font-family:var(--font-m);font-weight:600;font-size:12px;letter-spacing:0.06em;padding:12px;border-radius:10px;border:none;cursor:pointer" onclick="showNotif('Inställningar sparade!')">Spara ändringar</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="ph"><div class="ph-title">Abkär-SE Ekosystem</div></div>
+        <div style="padding:20px;font-size:13px;color:var(--muted);line-height:1.8">
+          Atlas Delivery är ett delprojekt under <span style="color:var(--cyan)">Atlas Valley</span>, som i sin tur är en del av <span style="color:var(--violet)">Abkär-SE</span>.<br><br>
+          Abkär-SE representerar automationssystem för allas välbefinnande och en bättre framtid. Målet är att avskaffa hunger i världen.
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function showNotif(msg){
+  document.getElementById('notifMsg').textContent=msg;
+  const el=document.getElementById('notif');
+  el.classList.add('show');
+  setTimeout(()=>el.classList.remove('show'),2800);
+}
+
+render();
+
+// auto-refresh live data
+setInterval(()=>{if(currentPage==='dashboard')render()},30000);
+</script>
+</body>
+</html>
