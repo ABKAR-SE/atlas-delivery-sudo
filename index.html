@@ -215,7 +215,8 @@ body{background:var(--bg);color:var(--text);font-family:var(--fb);-webkit-font-s
 <!-- TOAST -->
 <div class="toast" id="toast"><div class="td"></div><span id="toastMsg">—</span></div>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script>
 // ── SETTINGS PAGE ─────────────────────────────────────────────
 async function renderSettings(c) {
   c.innerHTML = `<div class="kpi-grid" style="grid-template-columns:1fr"><div class="panel" style="max-width:540px">
@@ -303,8 +304,7 @@ async function saveSettings() {
   btn.disabled=false; btn.textContent='SPARA INSTÄLLNINGAR';
 }
 
-</script>
-<script>
+
 const SB = supabase.createClient(
   'https://vgtdswplzuhbhhlmxrgg.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZndGRzd3BsenVoYmhobG14cmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMTY2ODIsImV4cCI6MjA4ODU5MjY4Mn0.82sk-40cQo7NxeRWUgthTzp_fk1TlBcqPchrBGGIFnU'
