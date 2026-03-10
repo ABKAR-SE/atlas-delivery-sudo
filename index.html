@@ -232,6 +232,7 @@ nav button .icon{font-size:16px;width:20px;text-align:center}
     <button onclick="setPage('menu')"><span class="icon">🗂️</span> Menyer</button>
     <button onclick="setPage('conversations')"><span class="icon">💬</span> Konversationer</button>
     <button onclick="setPage('accounts')"><span class="icon">👤</span> Konton</button>
+    <button onclick="setPage('customers')"><span class="icon">🧑‍🤝‍🧑</span> Kunder</button>
     <button onclick="setPage('blacklist')"><span class="icon">🚫</span> Blacklist</button>
     <button onclick="setPage('analytics')"><span class="icon">📈</span> Analys</button>
     <button onclick="setPage('settings')"><span class="icon">⚙️</span> Inställningar</button>
@@ -442,7 +443,35 @@ nav button .icon{font-size:16px;width:20px;text-align:center}
     </div>
   </div>
 
-  <!-- ANALYTICS PAGE -->
+  <!-- KUNDER PAGE -->
+  <div class="page" id="page-customers">
+    <div class="panel" style="margin-bottom:20px">
+      <div class="panel-header" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span class="panel-title">Kunder</span>
+        <input id="cust-search" placeholder="Sök på namn, e-post eller telefon..." oninput="filterCustomers()" style="flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none"/>
+        <span id="cust-count" style="font-size:11px;color:var(--text2);font-family:var(--mono);white-space:nowrap"></span>
+      </div>
+      <div class="panel-body-scroll" style="max-height:560px">
+        <table class="data-table" id="customers-table">
+          <thead>
+            <tr>
+              <th>Kund</th>
+              <th>E-post</th>
+              <th>Telefon</th>
+              <th>Adress</th>
+              <th>Ordrar</th>
+              <th>Totalt spenderat</th>
+              <th>Senaste order</th>
+              <th>Åtgärder</th>
+            </tr>
+          </thead>
+          <tbody id="customers-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLACKLIST PAGE -->
   <div class="page" id="page-analytics">
     <div class="kpi-grid" style="margin-bottom:20px">
       <div class="kpi cyan"><div class="kpi-label">Totala ordrar</div><div class="kpi-val" id="an-total">–</div></div>
@@ -583,7 +612,7 @@ function setPage(name) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('page-' + name).classList.add('active');
-  const titles = {dashboard:'Dashboard',orders:'Beställningar',restaurants:'Restauranger',riders:'Bud',menu:'Menyer',conversations:'Konversationer',accounts:'Konton',blacklist:'Blacklist',analytics:'Analys',settings:'Inställningar'};
+  const titles = {dashboard:'Dashboard',orders:'Beställningar',restaurants:'Restauranger',riders:'Bud',menu:'Menyer',conversations:'Konversationer',accounts:'Konton',customers:'Kunder',blacklist:'Blacklist',analytics:'Analys',settings:'Inställningar'};
   document.getElementById('page-title').textContent = titles[name] || name;
   document.querySelectorAll('nav button').forEach(b => { if (b.textContent.trim().toLowerCase().includes(name.substring(0,4))) b.classList.add('active'); });
   if (name === 'orders') renderOrdersTable();
@@ -592,6 +621,7 @@ function setPage(name) {
   if (name === 'analytics') loadAnalytics();
   if (name === 'conversations') loadConversations();
   if (name === 'menu') populateMenuRestaurantFilter();
+  if (name === 'customers') loadCustomers();
 }
 
 // ─── LOAD DATA ───────────────────────────────────────────────
@@ -1162,6 +1192,82 @@ function notify(msg) {
 // ─── AUTH CHECK ON LOAD ──────────────────────────────────────
 (async () => {
   const { data } = await SB.auth.getSession();
+// ─── KUNDER ──────────────────────────────────────────────
+let allCustomers = [];
+
+async function loadCustomers() {
+  document.getElementById('customers-body').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text2);font-family:var(--mono)">Laddar...</td></tr>';
+
+  // Get all delivered/picked orders with customer info
+  const { data: orders } = await SB.from('orders')
+    .select('customer_name,customer_phone,customer_address,delivery_address,total,subtotal,created_at,status')
+    .order('created_at', { ascending: false });
+
+  if (!orders) { document.getElementById('customers-body').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text2)">Ingen data</td></tr>'; return; }
+
+  // Aggregate by phone (best unique key we have without auth user link)
+  const map = {};
+  orders.forEach(o => {
+    const key = (o.customer_phone || '').trim() || (o.customer_name || '').trim().toLowerCase();
+    if (!key) return;
+    if (!map[key]) {
+      map[key] = {
+        name: o.customer_name || '–',
+        phone: o.customer_phone || '–',
+        address: o.customer_address || o.delivery_address || '–',
+        orders: 0,
+        spent: 0,
+        lastOrder: o.created_at
+      };
+    }
+    map[key].orders++;
+    map[key].spent += (o.total || 0);
+    if (o.created_at > map[key].lastOrder) {
+      map[key].lastOrder = o.created_at;
+      map[key].address = o.customer_address || o.delivery_address || map[key].address;
+    }
+  });
+
+  allCustomers = Object.values(map).sort((a, b) => b.orders - a.orders);
+  document.getElementById('cust-count').textContent = allCustomers.length + ' kunder';
+  renderCustomersTable(allCustomers);
+}
+
+function filterCustomers() {
+  const q = (document.getElementById('cust-search')?.value || '').toLowerCase();
+  const filtered = q ? allCustomers.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.phone.toLowerCase().includes(q) ||
+    c.address.toLowerCase().includes(q)
+  ) : allCustomers;
+  document.getElementById('cust-count').textContent = filtered.length + ' kunder';
+  renderCustomersTable(filtered);
+}
+
+function renderCustomersTable(list) {
+  const tbody = document.getElementById('customers-body');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text2);font-family:var(--mono)">Inga kunder hittades</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(c => {
+    const ts = c.lastOrder ? new Date(c.lastOrder).toLocaleDateString('sv-SE') : '–';
+    const isBlacklisted = allOrders?.some ? false : false; // placeholder
+    return `<tr>
+      <td style="font-weight:600">${escAttr(c.name)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text2)">–</td>
+      <td style="font-family:var(--mono);font-size:11px">${escAttr(c.phone)}</td>
+      <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(c.address)}">${escAttr(c.address)}</td>
+      <td style="font-family:var(--mono);text-align:center"><span style="background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);border-radius:6px;padding:2px 8px;color:var(--cyan);font-size:11px">${c.orders}</span></td>
+      <td style="font-family:var(--mono);color:var(--green)">${c.spent.toFixed(0)} kr</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text2)">${ts}</td>
+      <td>
+        <button class="btn btn-red btn-sm" onclick="addToBlacklist('','${escAttr(c.phone)}','Kund')">🚫 Blacklista</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
   if (data.session) {
     const { data: prof } = await SB.from('profiles').select('role').eq('id', data.session.user.id).single();
     if (prof?.role === 'admin') {
