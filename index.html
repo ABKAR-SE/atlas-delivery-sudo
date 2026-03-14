@@ -4,6 +4,7 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
 <title>Atlas Delivery — Admin</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -13,175 +14,187 @@
 :root{
   --bg:#0A0A0F;--bg2:#0F0F1A;--bg3:#141428;
   --cyan:#00D4FF;--violet:#7B2FFF;--green:#00FF88;--red:#FF4560;--orange:#FF8C00;
-  --text:#E8E8F0;--text2:#8888AA;--text3:#44446A;
-  --border:rgba(0,212,255,.12);--border2:rgba(123,47,255,.2);
-  --font:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;--r:12px;
+  --text:#E8E8F0;--text2:#8888AA;--text3:#4444666;
+  --border:rgba(0,212,255,.13);--border2:rgba(123,47,255,.18);
+  --glow-c:0 0 20px rgba(0,212,255,.3);--glow-v:0 0 20px rgba(123,47,255,.3);
+  --font:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;
+  --radius:12px;--radius-sm:8px;
 }
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;overflow:hidden}
-#sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
-.logo{padding:22px 20px 18px;border-bottom:1px solid var(--border)}
-.logo .brand{font-size:9px;color:var(--text2);letter-spacing:3px;font-family:var(--mono)}
+
+/* SIDEBAR */
+#sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;flex-shrink:0;z-index:10}
+.logo{padding:0 20px 24px;border-bottom:1px solid var(--border)}
+.logo .brand{font-size:11px;color:var(--text2);letter-spacing:3px;font-family:var(--mono)}
 .logo .name{font-size:18px;font-weight:800;background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-nav{flex:1;padding:12px 0;overflow-y:auto}
-nav button{width:100%;display:flex;align-items:center;gap:10px;padding:10px 18px;background:none;border:none;color:var(--text2);font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;transition:.2s;position:relative}
+.logo .sub{font-size:10px;color:var(--text2);letter-spacing:2px;font-family:var(--mono)}
+nav{flex:1;padding:16px 0}
+nav button{width:100%;display:flex;align-items:center;gap:10px;padding:11px 20px;background:none;border:none;color:var(--text2);font-family:var(--font);font-size:13px;font-weight:600;letter-spacing:.5px;cursor:pointer;transition:all .2s;position:relative}
 nav button:hover{color:var(--text);background:rgba(0,212,255,.05)}
 nav button.active{color:var(--cyan);background:rgba(0,212,255,.08)}
-nav button.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cyan)}
-.icon{font-size:15px;width:20px;text-align:center}
-.sb-footer{padding:14px 18px;border-top:1px solid var(--border)}
-.sb-user{font-size:10px;color:var(--text2);font-family:var(--mono);margin-bottom:8px}
+nav button.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cyan);border-radius:0 3px 3px 0}
+nav button .icon{font-size:16px;width:20px;text-align:center}
+.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border)}
+.sidebar-footer .user-info{font-size:11px;color:var(--text2);font-family:var(--mono)}
+
+/* MAIN */
 #main{flex:1;overflow-y:auto;background:var(--bg)}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:18px 28px;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:5}
-.topbar h1{font-size:20px;font-weight:800}
-.tr{display:flex;gap:10px;align-items:center}
-.live-pill{display:flex;align-items:center;gap:7px;font-size:10px;color:var(--green);font-family:var(--mono);letter-spacing:1.5px}
-.live-pill::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:lp 2s infinite}
-@keyframes lp{0%,100%{opacity:1}50%{opacity:.4}}
-.page{padding:26px 28px;display:none;min-height:calc(100vh - 65px)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:5}
+.topbar h1{font-size:20px;font-weight:800;letter-spacing:-.5px}
+.topbar .live{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--green);font-family:var(--mono);letter-spacing:1px}
+.topbar .live::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.page{padding:28px 32px;display:none}
 .page.active{display:block}
-/* KPI */
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px}
-.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px;position:relative;overflow:hidden}
-.kpi::after{content:'';position:absolute;top:0;right:0;width:70px;height:70px;border-radius:50%;filter:blur(28px);opacity:.14}
-.kpi.cy::after{background:var(--cyan)}.kpi.vi::after{background:var(--violet)}.kpi.gr::after{background:var(--green)}.kpi.or::after{background:var(--orange)}
-.kpi-lbl{font-size:9px;color:var(--text2);letter-spacing:2px;font-family:var(--mono);text-transform:uppercase;margin-bottom:7px}
-.kpi-val{font-size:26px;font-weight:800;font-family:var(--mono)}
-.kpi.cy .kpi-val{color:var(--cyan)}.kpi.vi .kpi-val{color:var(--violet)}.kpi.gr .kpi-val{color:var(--green)}.kpi.or .kpi-val{color:var(--orange)}
-/* LAYOUTS */
-.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:18px}
-.g3{display:grid;grid-template-columns:2fr 1fr;gap:18px;margin-bottom:18px}
+
+/* CARDS */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:all .3s}
+.kpi:hover{border-color:var(--cyan);box-shadow:var(--glow-c)}
+.kpi::after{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;filter:blur(30px);opacity:.15}
+.kpi.cyan::after{background:var(--cyan)}
+.kpi.violet::after{background:var(--violet)}
+.kpi.green::after{background:var(--green)}
+.kpi.orange::after{background:var(--orange)}
+.kpi-label{font-size:10px;color:var(--text2);letter-spacing:2px;font-family:var(--mono);text-transform:uppercase;margin-bottom:8px}
+.kpi-val{font-size:28px;font-weight:800;font-family:var(--mono)}
+.kpi.cyan .kpi-val{color:var(--cyan)}
+.kpi.violet .kpi-val{color:var(--violet)}
+.kpi.green .kpi-val{color:var(--green)}
+.kpi.orange .kpi-val{color:var(--orange)}
+.kpi-sub{font-size:11px;color:var(--text2);margin-top:4px}
+
+/* GRID LAYOUT */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px}
+
 /* PANEL */
-.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);overflow:hidden}
-.ph{display:flex;align-items:center;justify-content:space-between;padding:13px 18px;border-bottom:1px solid var(--border)}
-.pt{font-size:11px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--cyan);font-family:var(--mono)}
-.pb{padding:14px 18px}
-.pb-sc{overflow-y:auto}
+.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
+.panel-title{font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--cyan);font-family:var(--mono)}
+.panel-body{padding:16px 20px}
+
 /* TABLE */
-.dt{width:100%;border-collapse:collapse;font-size:12px}
-.dt th{padding:8px 12px;text-align:left;color:var(--text2);font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:500}
-.dt td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text)}
-.dt tr:hover td{background:rgba(0,212,255,.03)}
-.dt tr:last-child td{border:none}
-/* STATUS BADGES — CORRECTED LABELS */
-.badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:9px;font-family:var(--mono);font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.data-table{width:100%;border-collapse:collapse;font-size:12px}
+.data-table th{padding:8px 12px;text-align:left;color:var(--text2);font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:500}
+.data-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text);transition:background .15s;position:relative}
+.data-table tr:hover td{background:rgba(0,212,255,.04)}
+.data-table tr:last-child td{border-bottom:none}
+
+/* HOLOGRAM TOOLTIP */
+.holo-trigger{cursor:pointer}
+.holo-trigger:hover::after{content:attr(data-holo);position:fixed;z-index:9999;background:linear-gradient(135deg,rgba(10,10,30,.98),rgba(15,15,40,.98));border:1px solid var(--cyan);border-radius:var(--radius);padding:16px 18px;font-size:11px;font-family:var(--mono);color:var(--text);white-space:pre;line-height:1.8;box-shadow:0 0 30px rgba(0,212,255,.25),inset 0 0 30px rgba(0,212,255,.03);max-width:320px;pointer-events:none;transform:translate(12px,-50%);top:var(--y,50%);left:var(--x,50%)}
+
+/* STATUS BADGES */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:10px;font-family:var(--mono);font-weight:700;letter-spacing:.5px;text-transform:uppercase}
 .badge::before{content:'';width:5px;height:5px;border-radius:50%}
-.b-ny{background:rgba(255,140,0,.12);color:var(--orange);border:1px solid rgba(255,140,0,.25)}.b-ny::before{background:var(--orange)}
-.b-mottagen{background:rgba(0,212,255,.12);color:var(--cyan);border:1px solid rgba(0,212,255,.25)}.b-mottagen::before{background:var(--cyan)}
-.b-tillagas{background:rgba(0,212,255,.1);color:var(--cyan);border:1px solid rgba(0,212,255,.2)}.b-tillagas::before{background:var(--cyan)}
-.b-klar{background:rgba(123,47,255,.12);color:#AA88FF;border:1px solid rgba(123,47,255,.25)}.b-klar::before{background:#AA88FF}
-.b-accepterad{background:rgba(0,255,136,.12);color:var(--green);border:1px solid rgba(0,255,136,.25)}.b-accepterad::before{background:var(--green)}
-.b-hamtad{background:rgba(0,212,255,.1);color:var(--cyan);border:1px solid rgba(0,212,255,.2)}.b-hamtad::before{background:var(--cyan)}
-.b-levererad{background:rgba(255,255,255,.06);color:var(--text2);border:1px solid rgba(255,255,255,.1)}.b-levererad::before{background:var(--text3)}
-.b-online{background:rgba(0,255,136,.12);color:var(--green);border:1px solid rgba(0,255,136,.25)}.b-online::before{background:var(--green)}
-.b-offline{background:rgba(255,255,255,.06);color:var(--text2);border:1px solid rgba(255,255,255,.08)}.b-offline::before{background:var(--text3)}
-/* BTNS */
-.btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:8px;font-family:var(--font);font-size:12px;font-weight:700;cursor:pointer;transition:.2s;border:none}
-.btn-cy{background:linear-gradient(135deg,var(--cyan),#0099BB);color:#000}
-.btn-vi{background:linear-gradient(135deg,var(--violet),#5511CC);color:#fff}
+.badge-new{background:rgba(255,140,0,.15);color:var(--orange);border:1px solid rgba(255,140,0,.3)}.badge-new::before{background:var(--orange)}
+.badge-prep{background:rgba(0,212,255,.15);color:var(--cyan);border:1px solid rgba(0,212,255,.3)}.badge-prep::before{background:var(--cyan)}
+.badge-ready{background:rgba(123,47,255,.15);color:#AA88FF;border:1px solid rgba(123,47,255,.3)}.badge-ready::before{background:#AA88FF}
+.badge-picked{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3)}.badge-picked::before{background:var(--green)}
+.badge-delivered{background:rgba(255,255,255,.08);color:var(--text2);border:1px solid rgba(255,255,255,.1)}.badge-delivered::before{background:var(--text2)}
+.badge-online{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3)}.badge-online::before{background:var(--green)}
+.badge-offline{background:rgba(255,255,255,.08);color:var(--text2);border:1px solid rgba(255,255,255,.1)}.badge-offline::before{background:var(--text2)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:var(--radius-sm);font-family:var(--font);font-size:12px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;border:none}
+.btn-cyan{background:linear-gradient(135deg,var(--cyan),#0099BB);color:#000}
+.btn-cyan:hover{box-shadow:var(--glow-c);transform:translateY(-1px)}
+.btn-violet{background:linear-gradient(135deg,var(--violet),#5511CC);color:#fff}
+.btn-violet:hover{box-shadow:var(--glow-v);transform:translateY(-1px)}
 .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2)}
 .btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
-.btn-red{background:rgba(255,69,96,.12);border:1px solid rgba(255,69,96,.25);color:var(--red)}
-.btn-sm{padding:4px 10px;font-size:10px}
-/* FORM */
-.inp{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--text);font-family:var(--mono);font-size:12px;width:100%;outline:none;transition:.15s}
-.inp:focus{border-color:var(--cyan)}.inp::placeholder{color:var(--text2)}
-.lbl{font-size:9px;color:var(--text2);letter-spacing:1.5px;font-family:var(--mono);text-transform:uppercase;margin-bottom:5px;display:block}
-.fg{margin-bottom:13px}
-.fr{display:grid;grid-template-columns:1fr 1fr;gap:13px}
+.btn-red{background:rgba(255,69,96,.15);border:1px solid rgba(255,69,96,.3);color:var(--red)}
+.btn-red:hover{background:rgba(255,69,96,.3)}
+.btn-sm{padding:5px 12px;font-size:11px}
+
+/* FORM INPUTS */
+.inp{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:12px;width:100%;outline:none;transition:border .2s}
+.inp:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,212,255,.08)}
+.inp::placeholder{color:var(--text2)}
+.lbl{font-size:10px;color:var(--text2);letter-spacing:1.5px;font-family:var(--mono);text-transform:uppercase;margin-bottom:6px;display:block}
+.form-group{margin-bottom:14px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+
 /* MAP */
-#riders-map{height:280px;border-radius:8px;filter:hue-rotate(180deg) invert(1)}
-.chart-wrap{height:190px;position:relative}
-/* MENU CARDS */
-.menu-card-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
-.mcard{background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:13px;transition:.15s}
-.mcard:hover{border-color:var(--cyan)}
-.mcard-name{font-size:13px;font-weight:700;margin-bottom:3px}
-.mcard-meta{font-size:10px;color:var(--text2);font-family:var(--mono)}
-.mcard-acts{display:flex;gap:5px;margin-top:9px}
-.addon-tag-s{padding:2px 6px;border-radius:4px;font-size:9px;font-family:var(--mono);background:rgba(123,47,255,.1);color:var(--violet);border:1px solid rgba(123,47,255,.18)}
-/* PIN OVERLAY */
-.pin-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.85);backdrop-filter:blur(8px);z-index:300;align-items:center;justify-content:center}
-.pin-ov.open{display:flex}
-.pin-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:32px;width:330px;text-align:center}
-.pin-title{font-size:18px;font-weight:800;margin-bottom:5px}
-.pin-sub{font-size:11px;color:var(--text2);font-family:var(--mono);margin-bottom:18px}
-.pin-dots{display:flex;gap:10px;justify-content:center;margin-bottom:18px}
-.pin-dot{width:13px;height:13px;border-radius:50%;background:var(--bg3);border:1px solid var(--border);transition:.2s}
-.pin-dot.filled{background:var(--cyan);border-color:var(--cyan)}
-.pin-keys{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;max-width:210px;margin:0 auto}
-.pin-key{padding:13px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;font-size:15px;font-weight:700;cursor:pointer;transition:.2s;font-family:var(--mono)}
-.pin-key:hover{background:rgba(0,212,255,.1);border-color:var(--cyan)}
-.pin-err{color:var(--red);font-size:12px;font-family:var(--mono);margin-top:9px;min-height:17px}
-/* KONTON SECTIONS */
-.konton-tabs{display:flex;gap:6px;margin-bottom:18px}
-.konton-tab{flex:1;padding:10px;border-radius:8px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;background:var(--bg3);border:1px solid var(--border);color:var(--text2);transition:.15s;font-family:var(--mono)}
-.konton-tab.active{background:rgba(0,212,255,.1);border-color:var(--cyan);color:var(--cyan)}
-/* MODAL */
-.modal-bg{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center}
-.modal-bg.open{display:flex}
-.modal{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:24px;width:490px;max-width:95vw;max-height:88vh;overflow-y:auto;position:relative}
-.modal-title{font-size:17px;font-weight:800;margin-bottom:18px}
-.mc-btn{position:absolute;top:14px;right:14px;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--text2);font-size:15px;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center}
-.mc-btn:hover{border-color:var(--red);color:var(--red)}
-.mgrp{margin-bottom:13px}
-.ml{font-size:9px;letter-spacing:2px;color:var(--text2);font-family:var(--mono);text-transform:uppercase;display:block;margin-bottom:5px}
-.mi{width:100%;padding:9px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--mono);font-size:12px;outline:none;transition:.15s}
-.mi:focus{border-color:var(--cyan)}.mi::placeholder{color:var(--text2)}
-.msel{width:100%;padding:9px 11px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;cursor:pointer}
-.mta{min-height:70px;resize:vertical}
-.allergen-cbs{display:flex;flex-wrap:wrap;gap:5px}
-.acb{display:flex;align-items:center;gap:4px;padding:4px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;cursor:pointer;font-size:11px;transition:.15s;font-family:var(--mono)}
-.acb input{display:none}
-.acb.checked{background:rgba(0,212,255,.08);border-color:var(--cyan);color:var(--cyan)}
-.addon-er{display:flex;gap:7px;margin-bottom:5px;align-items:center}
-.addon-er input{flex:1;padding:7px 9px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none}
-.addon-er input:focus{border-color:var(--cyan)}
-.addon-er .ap{width:80px}
-.btn-rm{background:transparent;border:1px solid rgba(255,69,96,.25);border-radius:6px;color:var(--red);padding:4px 7px;cursor:pointer;font-size:11px;flex-shrink:0}
-.btn-aa{padding:6px 11px;background:rgba(123,47,255,.12);border:1px solid rgba(123,47,255,.25);border-radius:7px;color:var(--violet);font-size:11px;cursor:pointer;font-family:var(--mono)}
-.mf{display:flex;gap:8px;justify-content:flex-end;margin-top:16px;padding-top:12px;border-top:1px solid var(--border)}
-.ms-btn{padding:9px 18px;background:linear-gradient(135deg,var(--cyan),var(--violet));border:none;border-radius:8px;color:#000;font-weight:700;font-size:12px;cursor:pointer}
-.mc-can{padding:9px 16px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer}
-.mc-del{padding:9px 16px;background:rgba(255,69,96,.1);border:1px solid rgba(255,69,96,.25);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer}
-.cat-item-r{display:flex;align-items:center;gap:7px;padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;margin-bottom:5px}
-/* CAT MODAL */
-.cat-modal-bg{display:none;position:fixed;inset:0;z-index:201;background:rgba(0,0,0,.72);backdrop-filter:blur(3px);align-items:center;justify-content:center}
-.cat-modal-bg.open{display:flex}
+#riders-map{height:340px;border-radius:var(--radius-sm);filter:hue-rotate(180deg) invert(1)}
+
+/* CHART */
+.chart-wrap{position:relative;height:200px}
+
+/* CHAT PANEL */
+.chat-list{display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;padding-right:4px}
+.chat-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;cursor:pointer;transition:all .2s}
+.chat-item:hover{border-color:var(--cyan);background:rgba(0,212,255,.04)}
+.chat-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.chat-item-title{font-size:12px;font-weight:700;color:var(--cyan)}
+.chat-item-time{font-size:10px;color:var(--text2);font-family:var(--mono)}
+.chat-item-preview{font-size:11px;color:var(--text2)}
+
 /* CHAT MODAL */
-.chat-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:150;align-items:center;justify-content:center}
+.chat-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
 .chat-modal.open{display:flex}
-.chat-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);width:520px;max-height:620px;display:flex;flex-direction:column}
-.chat-box-hdr{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-.chat-box-title{font-size:12px;font-weight:700;color:var(--cyan);font-family:var(--mono)}
-.ch-tabs{display:flex;gap:4px;padding:7px 12px;border-bottom:1px solid var(--border)}
-.ch-tab{flex:1;padding:6px;border-radius:6px;text-align:center;font-size:10px;font-weight:700;cursor:pointer;background:var(--bg3);border:1px solid var(--border);color:var(--text2);transition:.15s;font-family:var(--mono)}
-.ch-tab.active{background:rgba(0,212,255,.08);border-color:var(--cyan);color:var(--cyan)}
-.chat-msgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;max-height:360px}
-.cm{max-width:80%;padding:8px 12px;border-radius:9px;font-size:12px;line-height:1.5}
-.cm.admin{background:rgba(123,47,255,.18);border:1px solid rgba(123,47,255,.28);align-self:flex-end}
-.cm.other{background:var(--bg3);border:1px solid var(--border);align-self:flex-start}
-.cm-sender{font-size:9px;color:var(--text2);font-family:var(--mono);margin-bottom:3px;text-transform:uppercase}
-.chat-ir{padding:10px 14px;border-top:1px solid var(--border);display:flex;gap:7px}
+.chat-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);width:500px;max-height:600px;display:flex;flex-direction:column;box-shadow:var(--glow-c)}
+.chat-box-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
+.chat-box-title{font-size:13px;font-weight:700;color:var(--cyan);font-family:var(--mono)}
+.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:380px}
+.msg{max-width:80%;padding:8px 12px;border-radius:10px;font-size:12px;line-height:1.5}
+.msg.admin{background:rgba(123,47,255,.2);border:1px solid rgba(123,47,255,.3);align-self:flex-end;color:var(--text)}
+.msg.other{background:var(--bg3);border:1px solid var(--border);align-self:flex-start;color:var(--text)}
+.msg-sender{font-size:9px;color:var(--text2);font-family:var(--mono);margin-bottom:3px;letter-spacing:1px;text-transform:uppercase}
+.chat-input-row{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
+.chat-input-row .inp{flex:1}
+
 /* SETTINGS */
-.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.sc{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:18px}
-.sc-title{font-size:11px;font-weight:700;color:var(--cyan);letter-spacing:1.5px;font-family:var(--mono);text-transform:uppercase;margin-bottom:14px}
+.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.settings-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.settings-title{font-size:12px;font-weight:700;color:var(--cyan);letter-spacing:1.5px;font-family:var(--mono);text-transform:uppercase;margin-bottom:16px}
+
 /* LOGIN */
-#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200}
-.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:40px;width:380px}
-.login-logo{text-align:center;margin-bottom:26px}
-.login-logo .l1{font-size:9px;color:var(--text2);letter-spacing:3px;font-family:var(--mono)}
-.login-logo .l2{font-size:22px;font-weight:800;background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.login-logo .l3{font-size:10px;color:var(--text2);letter-spacing:2px;font-family:var(--mono)}
-.lerr{background:rgba(255,69,96,.1);border:1px solid rgba(255,69,96,.3);color:var(--red);padding:9px 12px;border-radius:8px;font-size:12px;font-family:var(--mono);margin-bottom:12px;display:none}
-/* NOTIF */
-.notif{position:fixed;bottom:22px;right:22px;background:var(--bg2);border:1px solid var(--cyan);border-radius:8px;padding:11px 16px;font-family:var(--mono);font-size:12px;color:var(--cyan);transform:translateY(80px);opacity:0;transition:all .4s;z-index:9999;max-width:320px}
+#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;flex-direction:column}
+.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:40px;width:380px;box-shadow:var(--glow-v)}
+.login-logo{text-align:center;margin-bottom:28px}
+.login-logo .l1{font-size:10px;color:var(--text2);letter-spacing:3px;font-family:var(--mono)}
+.login-logo .l2{font-size:24px;font-weight:800;background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-logo .l3{font-size:11px;color:var(--text2);letter-spacing:2px;font-family:var(--mono)}
+.login-err{background:rgba(255,69,96,.1);border:1px solid rgba(255,69,96,.3);color:var(--red);padding:10px 14px;border-radius:var(--radius-sm);font-size:12px;font-family:var(--mono);margin-bottom:14px;display:none}
+.login-form-title{font-size:11px;color:var(--text2);font-family:var(--mono);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:20px;text-align:center}
+
+/* SCROLLBAR */
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
+
+/* MENU MANAGEMENT */
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
+.menu-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;transition:all .2s}
+.menu-card:hover{border-color:var(--cyan)}
+.menu-card-name{font-size:13px;font-weight:700;margin-bottom:4px}
+.menu-card-meta{font-size:11px;color:var(--text2);font-family:var(--mono)}
+.menu-card-actions{display:flex;gap:6px;margin-top:10px}
+
+/* CREATE ACCOUNT FORM */
+.create-account-wrap{max-width:560px}
+
+/* BLACKLIST */
+.blacklist-table-wrap{overflow-x:auto}
+
+/* SCROLLABLE PANEL BODY */
+.panel-body-scroll{padding:0;max-height:340px;overflow-y:auto}
+.panel-body-scroll .data-table{margin:0}
+
+/* SECTION TITLE */
+.section-title{font-size:11px;color:var(--text2);letter-spacing:2px;font-family:var(--mono);text-transform:uppercase;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+
+/* NOTIFICATION */
+.notif{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--cyan);border-radius:var(--radius-sm);padding:12px 18px;font-family:var(--mono);font-size:12px;color:var(--cyan);box-shadow:var(--glow-c);transform:translateY(80px);opacity:0;transition:all .4s;z-index:9999;max-width:340px}
 .notif.show{transform:translateY(0);opacity:1}
-::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
 </style>
 </head>
 <body>
+
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
@@ -190,836 +203,1081 @@ nav button.active::before{content:'';position:absolute;left:0;top:0;bottom:0;wid
       <div class="l2">Atlas Delivery</div>
       <div class="l3">ADMIN PANEL</div>
     </div>
-    <div class="lerr" id="lerr"></div>
-    <div class="fg"><label class="lbl">E-post</label><input class="inp" id="lemail" type="email" placeholder="admin@atlasdel.se"/></div>
-    <div class="fg"><label class="lbl">Lösenord</label><input class="inp" id="lpass" type="password" placeholder="••••••••" onkeydown="if(event.key===\'Enter\')doLogin()"/></div>
-    <button class="btn btn-vi" style="width:100%;justify-content:center;padding:12px" onclick="doLogin()">Logga in</button>
+    <div class="login-form-title">Administratörsinloggning</div>
+    <div class="login-err" id="login-err"></div>
+    <div class="form-group">
+      <label class="lbl">E-postadress</label>
+      <input class="inp" id="login-email" type="email" placeholder="admin@atlasdel.se"/>
+    </div>
+    <div class="form-group">
+      <label class="lbl">Lösenord</label>
+      <input class="inp" id="login-pass" type="password" placeholder="••••••••"/>
+    </div>
+    <button class="btn btn-violet" style="width:100%;justify-content:center;padding:12px" onclick="doLogin()">Logga in</button>
   </div>
 </div>
-<!-- PIN OVERLAY -->
-<div class="pin-ov" id="pinOv">
-  <div class="pin-box">
-    <div class="pin-title">🔐 Konton</div>
-    <div class="pin-sub">Ange admin-PIN för att fortsätta</div>
-    <div class="pin-dots" id="pinDots">
-      <div class="pin-dot" id="pd0"></div><div class="pin-dot" id="pd1"></div>
-      <div class="pin-dot" id="pd2"></div><div class="pin-dot" id="pd3"></div>
-    </div>
-    <div class="pin-keys" id="pinKeys"></div>
-    <div class="pin-err" id="pinErr"></div>
-    <button class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="closePinOv()">Avbryt</button>
-  </div>
-</div>
-<!-- MENU ITEM MODAL -->
-<div class="modal-bg" id="miModal">
-  <div class="modal">
-    <button class="mc-btn" onclick="closeMiModal()">✕</button>
-    <div class="modal-title" id="miModalTitle">Ny rätt</div>
-    <div style="display:grid;grid-template-columns:1fr 76px;gap:10px">
-      <div class="mgrp"><label class="ml">Namn</label><input class="mi" id="miName" placeholder="Rätt namn"></div>
-      <div class="mgrp"><label class="ml">Emoji</label><input class="mi" id="miEmoji" placeholder="🍔"></div>
-    </div>
-    <div class="mgrp"><label class="ml">Beskrivning</label><textarea class="mi mta" id="miDesc" placeholder="Beskrivning..."></textarea></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-      <div class="mgrp"><label class="ml">Pris (kr)</label><input class="mi" id="miPrice" type="number" placeholder="149"></div>
-      <div class="mgrp"><label class="ml">Kategori</label><select class="msel" id="miCat"></select></div>
-    </div>
-    <div class="mgrp"><label class="ml">Allergener</label>
-      <div class="allergen-cbs" id="miAllergens">
-        <label class="acb" onclick="tgAcb(this)"><input type="checkbox" value="Gluten"> Gluten</label>
-        <label class="acb" onclick="tgAcb(this)"><input type="checkbox" value="Laktos"> Laktos</label>
-        <label class="acb" onclick="tgAcb(this)"><input type="checkbox" value="Nötter"> Nötter</label>
-        <label class="acb" onclick="tgAcb(this)"><input type="checkbox" value="Ägg"> Ägg</label>
-        <label class="acb" onclick="tgAcb(this)"><input type="checkbox" value="Vegan"> Vegan</label>
-        <label class="acb" onclick="tgAcb(this)"><input type="checkbox" value="Vegetarisk"> Vegetarisk</label>
-      </div>
-    </div>
-    <div class="mgrp"><label class="ml" style="display:flex;justify-content:space-between;align-items:center">Tillägg <button class="btn-aa" onclick="addAddonRow()">+ Tillägg</button></label><div id="addonRows"></div></div>
-    <div class="mf">
-      <button class="mc-del" id="miDelBtn" onclick="deleteMenuItem()" style="display:none">Ta bort</button>
-      <button class="mc-can" onclick="closeMiModal()">Avbryt</button>
-      <button class="ms-btn" onclick="saveMenuItem()">Spara</button>
-    </div>
-  </div>
-</div>
-<!-- CAT MODAL -->
-<div class="cat-modal-bg" id="catModal">
-  <div class="modal" style="max-width:380px">
-    <button class="mc-btn" onclick="document.getElementById(\'catModal\').classList.remove(\'open\')">✕</button>
-    <div class="modal-title">Kategorier</div>
-    <div id="catListEl"></div>
-    <div style="display:flex;gap:7px;margin-top:8px">
-      <input class="mi" id="newCatInp" placeholder="Ny kategori..." style="flex:1">
-      <button class="ms-btn" onclick="addCat()">Lägg till</button>
-    </div>
-  </div>
-</div>
-<!-- CHAT MODAL -->
-<div class="chat-modal" id="chatModal">
-  <div class="chat-box">
-    <div class="chat-box-hdr">
-      <span class="chat-box-title" id="chatModalTitle">Order #–</span>
-      <button class="btn btn-ghost btn-sm" onclick="closeChatModal()">✕</button>
-    </div>
-    <div class="ch-tabs">
-      <div class="ch-tab active" onclick="switchChatCh(\'customer\')" id="ccht-customer">👤 KUND</div>
-      <div class="ch-tab" onclick="switchChatCh(\'restaurant\')" id="ccht-restaurant">🍽️ REST.</div>
-      <div class="ch-tab" onclick="switchChatCh(\'rider\')" id="ccht-rider">🛵 BUD</div>
-      <div class="ch-tab" onclick="switchChatCh(\'dev\')" id="ccht-dev">⚡ DEV</div>
-    </div>
-    <div class="chat-msgs" id="chatModalMsgs"></div>
-    <div class="chat-ir">
-      <input class="inp" id="chatModalInp" style="flex:1" placeholder="Skriv som admin..."/>
-      <button class="btn btn-cy btn-sm" onclick="sendChatFromModal()">Skicka</button>
-    </div>
-  </div>
-</div>
+
 <!-- SIDEBAR -->
 <div id="sidebar">
   <div class="logo">
     <div class="brand">ABKÄR-SE</div>
     <div class="name">Atlas Delivery</div>
+    <div class="sub">ADMIN v3.0</div>
   </div>
   <nav>
-    <button class="active" onclick="setPage(\'dashboard\')"><span class="icon">⬡</span> Dashboard</button>
-    <button onclick="setPage(\'orders\')"><span class="icon">📋</span> Beställningar</button>
-    <button onclick="setPage(\'restaurants\')"><span class="icon">🍽️</span> Restauranger</button>
-    <button onclick="setPage(\'riders\')"><span class="icon">🛵</span> Bud</button>
-    <button onclick="setPage(\'menu\')"><span class="icon">🗂️</span> Menyer</button>
-    <button onclick="setPage(\'conversations\')"><span class="icon">💬</span> Konversationer</button>
-    <button onclick="setPage(\'accounts\')"><span class="icon">🔐</span> Konton</button>
-    <button onclick="setPage(\'customers\')"><span class="icon">🧑‍🤝‍🧑</span> Kunder</button>
-    <button onclick="setPage(\'blacklist\')"><span class="icon">🚫</span> Blacklist</button>
-    <button onclick="setPage(\'analytics\')"><span class="icon">📈</span> Analys</button>
-    <button onclick="setPage(\'settings\')"><span class="icon">⚙️</span> Inställningar</button>
+    <button class="active" onclick="setPage('dashboard')"><span class="icon">⬡</span> Dashboard</button>
+    <button onclick="setPage('orders')"><span class="icon">📋</span> Beställningar</button>
+    <button onclick="setPage('restaurants')"><span class="icon">🍽️</span> Restauranger</button>
+    <button onclick="setPage('riders')"><span class="icon">🛵</span> Bud</button>
+    <button onclick="setPage('menu')"><span class="icon">🗂️</span> Menyer</button>
+    <button onclick="setPage('conversations')"><span class="icon">💬</span> Konversationer</button>
+    <button onclick="setPage('accounts')"><span class="icon">👤</span> Konton</button>
+    <button onclick="setPage('customers')"><span class="icon">🧑‍🤝‍🧑</span> Kunder</button>
+    <button onclick="setPage('blacklist')"><span class="icon">🚫</span> Blacklist</button>
+    <button onclick="setPage('analytics')"><span class="icon">📈</span> Analys</button>
+    <button onclick="setPage('settings')"><span class="icon">⚙️</span> Inställningar</button>
   </nav>
-  <div class="sb-footer">
-    <div class="sb-user" id="sbUser">admin@atlasdel.se</div>
-    <button class="btn btn-ghost btn-sm" style="width:100%;justify-content:center" onclick="doLogout()">Logga ut</button>
+  <div class="sidebar-footer">
+    <div class="user-info" id="sidebar-user">admin@atlasdel.se</div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="doLogout()">Logga ut</button>
   </div>
 </div>
+
 <!-- MAIN -->
 <div id="main">
   <div class="topbar">
     <h1 id="page-title">Dashboard</h1>
-    <div class="tr">
-      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ CSV</button>
-      <div class="live-pill">LIVE</div>
+    <div style="display:flex;align-items:center;gap:16px">
+      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Exportera CSV</button>
+      <div class="live">LIVE SYNC</div>
     </div>
   </div>
-  <!-- DASHBOARD -->
+
+  <!-- DASHBOARD PAGE -->
   <div class="page active" id="page-dashboard">
     <div class="kpi-grid">
-      <div class="kpi cy"><div class="kpi-lbl">Ordrar idag</div><div class="kpi-val" id="kpi-orders">–</div></div>
-      <div class="kpi gr"><div class="kpi-lbl">Intäkter idag</div><div class="kpi-val" id="kpi-rev">–</div></div>
-      <div class="kpi vi"><div class="kpi-lbl">Aktiva bud</div><div class="kpi-val" id="kpi-riders">–</div></div>
-      <div class="kpi or"><div class="kpi-lbl">Öppna restauranger</div><div class="kpi-val" id="kpi-restaurants">–</div></div>
+      <div class="kpi cyan"><div class="kpi-label">Ordrar idag</div><div class="kpi-val" id="kpi-orders">–</div><div class="kpi-sub">live</div></div>
+      <div class="kpi green"><div class="kpi-label">Intäkter idag</div><div class="kpi-val" id="kpi-rev">–</div><div class="kpi-sub">SEK</div></div>
+      <div class="kpi violet"><div class="kpi-label">Aktiva bud</div><div class="kpi-val" id="kpi-riders">–</div><div class="kpi-sub">online</div></div>
+      <div class="kpi orange"><div class="kpi-label">Restauranger</div><div class="kpi-val" id="kpi-restaurants">–</div><div class="kpi-sub">aktiva</div></div>
     </div>
-    <div class="g3">
+    <div class="grid-3">
       <div class="panel">
-        <div class="ph"><span class="pt">Ordrar live</span><button class="btn btn-ghost btn-sm" onclick="setPage(\'orders\')">Visa alla</button></div>
-        <div class="pb-sc" style="max-height:300px;overflow-y:auto"><table class="dt"><thead><tr><th>#</th><th>Kund</th><th>Restaurang</th><th>Totalt</th><th>Status</th></tr></thead><tbody id="dash-orders-body"></tbody></table></div>
+        <div class="panel-header"><span class="panel-title">Ordrar live</span><button class="btn btn-ghost btn-sm" onclick="setPage('orders')">Visa alla</button></div>
+        <div class="panel-body-scroll"><table class="data-table" id="dash-orders-table"><thead><tr><th>#</th><th>Kund</th><th>Restaurang</th><th>Totalt</th><th>Status</th></tr></thead><tbody id="dash-orders-body"></tbody></table></div>
       </div>
-      <div class="panel"><div class="ph"><span class="pt">Bud-karta</span></div><div class="pb" style="padding:10px"><div id="riders-map"></div></div></div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Bud-karta</span></div>
+        <div class="panel-body" style="padding:12px"><div id="riders-map"></div></div>
+      </div>
     </div>
-    <div class="g2">
-      <div class="panel"><div class="ph"><span class="pt">Intäkter — 7 dagar</span></div><div class="pb"><div class="chart-wrap"><canvas id="rev-chart"></canvas></div></div></div>
-      <div class="panel"><div class="ph"><span class="pt">Ordrar — 7 dagar</span></div><div class="pb"><div class="chart-wrap"><canvas id="ord-chart"></canvas></div></div></div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Intäkter — 7 dagar</span></div>
+        <div class="panel-body"><div class="chart-wrap"><canvas id="rev-chart"></canvas></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Ordrar — 7 dagar</span></div>
+        <div class="panel-body"><div class="chart-wrap"><canvas id="ord-chart"></canvas></div></div>
+      </div>
     </div>
   </div>
-  <!-- ORDERS -->
+
+  <!-- ORDERS PAGE -->
   <div class="page" id="page-orders">
     <div class="panel">
-      <div class="ph">
-        <span class="pt">Beställningar</span>
+      <div class="panel-header">
+        <span class="panel-title">Alla beställningar</span>
         <div style="display:flex;gap:8px">
-          <input class="inp" style="width:200px" placeholder="Sök..." id="ord-search" oninput="filterOrders()"/>
-          <select class="inp" style="width:150px" id="ord-filter" onchange="filterOrders()">
+          <input class="inp" style="width:200px" placeholder="Sök order..." id="order-search" oninput="filterOrders()"/>
+          <select class="inp" style="width:140px" id="order-filter" onchange="filterOrders()">
             <option value="">Alla status</option>
-            <option value="pending">Ny</option><option value="paid">Betald</option>
-            <option value="accepted">Mottagen</option><option value="ready">Klar</option>
-            <option value="picked">Hämtad</option><option value="delivered">Levererad</option>
+            <option value="new">Ny</option>
+            <option value="preparing">Tillagas</option>
+            <option value="ready">Klar</option>
+            <option value="picked">Hämtad</option>
+            <option value="delivered">Levererad</option>
           </select>
         </div>
       </div>
-      <div class="pb-sc" style="max-height:560px;overflow-y:auto">
-        <table class="dt"><thead><tr><th>#</th><th>Kund</th><th>Tel</th><th>Adress</th><th>Restaurang</th><th>Bud</th><th>Totalt</th><th>Leverans</th><th>Tid</th><th>Status</th><th>Chat</th></tr></thead>
-        <tbody id="orders-body"></tbody></table>
+      <div class="panel-body-scroll" style="max-height:520px">
+        <table class="data-table" id="orders-table">
+          <thead><tr><th>#</th><th>Kund</th><th>Telefon</th><th>Adress</th><th>Restaurang</th><th>Bud</th><th>Totalt</th><th>Leverans</th><th>Tid</th><th>Status</th><th>Chat</th></tr></thead>
+          <tbody id="orders-body"></tbody>
+        </table>
       </div>
     </div>
   </div>
-  <!-- RESTAURANTS -->
+
+  <!-- RESTAURANTS PAGE -->
   <div class="page" id="page-restaurants">
-    <div class="panel"><div class="ph"><span class="pt">Restauranger</span></div>
-      <div class="pb-sc" style="max-height:560px;overflow-y:auto"><table class="dt"><thead><tr><th>Namn</th><th>Tel</th><th>Adress</th><th>Öppettider</th><th>Status</th><th>Ordrar</th><th>Åtgärd</th></tr></thead><tbody id="restaurants-body"></tbody></table></div>
-    </div>
-  </div>
-  <!-- RIDERS -->
-  <div class="page" id="page-riders">
-    <div class="panel"><div class="ph"><span class="pt">Bud — Live</span><div class="live-pill" style="font-size:10px">LIVE</div></div>
-      <div class="pb-sc" style="max-height:560px;overflow-y:auto"><table class="dt"><thead><tr><th>Namn</th><th>E-post</th><th>Tel</th><th>Status</th><th>Leveranser</th><th>Åtgärd</th></tr></thead><tbody id="riders-body"></tbody></table></div>
-    </div>
-  </div>
-  <!-- MENU -->
-  <div class="page" id="page-menu">
-    <div class="panel" style="margin-bottom:18px">
-      <div class="ph">
-        <span class="pt">Hantera menyer</span>
-        <div style="display:flex;gap:7px">
-          <select class="inp" style="width:200px" id="menu-rest-filter" onchange="loadMenuItems()"><option value="">Välj restaurang...</option></select>
-          <button class="btn btn-cy btn-sm" onclick="openMiModal()">+ Lägg till rätt</button>
-          <button class="btn btn-ghost btn-sm" onclick="openCatModal()">⚙ Kategorier</button>
-        </div>
-      </div>
-      <div class="pb"><div class="menu-card-g" id="menu-grid"><div style="color:var(--text2);font-family:var(--mono);font-size:12px">Välj en restaurang ovan.</div></div></div>
-    </div>
-  </div>
-  <!-- CONVERSATIONS -->
-  <div class="page" id="page-conversations">
-    <div class="g2">
-      <div class="panel"><div class="ph"><span class="pt">Konversationer</span></div>
-        <div class="pb" id="conv-list-wrap" style="max-height:500px;overflow-y:auto"></div>
-      </div>
-      <div class="panel">
-        <div class="ph"><span class="pt" id="conv-detail-title">Välj konversation</span><button class="btn btn-ghost btn-sm" onclick="closeConvDetail()">✕</button></div>
-        <div class="chat-msgs" id="conv-msgs" style="max-height:380px"></div>
-        <div class="chat-ir"><input class="inp" id="admin-msg-inp" style="flex:1" placeholder="Skriv som admin..."/><button class="btn btn-cy btn-sm" onclick="sendAdminMsg()">Skicka</button></div>
-      </div>
-    </div>
-  </div>
-  <!-- ACCOUNTS / KONTON -->
-  <div class="page" id="page-accounts">
-    <div class="g2">
-      <div class="panel">
-        <div class="ph"><span class="pt">Skapa konto</span></div>
-        <div class="pb">
-          <div class="fg"><label class="lbl">Roll</label><select class="inp" id="new-role" onchange="updateAccForm()"><option value="restaurant">Restaurang</option><option value="rider">Bud</option><option value="customer">Kund</option></select></div>
-          <div class="fr">
-            <div class="fg"><label class="lbl">Namn</label><input class="inp" id="new-name" placeholder="Namn"/></div>
-            <div class="fg"><label class="lbl">E-post</label><input class="inp" id="new-email" type="email" placeholder="namn@atlasdel.se"/></div>
-          </div>
-          <div class="fr">
-            <div class="fg"><label class="lbl">Lösenord</label><input class="inp" id="new-pass" type="password" placeholder="Min 8 tecken"/></div>
-            <div class="fg"><label class="lbl">Telefon</label><input class="inp" id="new-phone" placeholder="+46 ..."/></div>
-          </div>
-          <div class="fg" id="rest-assign-grp"><label class="lbl">Tilldela restaurang</label><select class="inp" id="new-rest-assign"><option value="">Välj...</option></select></div>
-          <button class="btn btn-vi" style="width:100%;justify-content:center" onclick="createAccount()">Skapa konto</button>
-          <div id="create-result" style="margin-top:10px;font-size:12px;font-family:var(--mono)"></div>
-        </div>
-      </div>
-      <div class="panel">
-        <div class="ph">
-          <span class="pt">Befintliga konton</span>
-          <div style="display:flex;gap:5px">
-            <button class="btn btn-ghost btn-sm" id="btn-kr" onclick="showKonton(\'restaurant\')">Restauranger</button>
-            <button class="btn btn-ghost btn-sm" id="btn-krid" onclick="showKonton(\'rider\')">Bud</button>
-            <button class="btn btn-ghost btn-sm" id="btn-kc" onclick="showKonton(\'customer\')">Kunder</button>
-          </div>
-        </div>
-        <div class="pb-sc" style="max-height:460px;overflow-y:auto">
-          <table class="dt"><thead><tr><th>Namn</th><th>E-post</th><th>Roll</th><th>Tel</th><th>Skapad</th></tr></thead><tbody id="accounts-body"></tbody></table>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- CUSTOMERS -->
-  <div class="page" id="page-customers">
     <div class="panel">
-      <div class="ph" style="flex-wrap:wrap;gap:10px">
-        <span class="pt">Kunder — Live</span>
-        <div style="display:flex;gap:8px;align-items:center">
-          <input id="cust-search" placeholder="Sök..." oninput="filterCustomers()" style="background:var(--bg3);border:1px solid var(--border);border-radius:7px;padding:7px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none;width:220px"/>
-          <span id="cust-count" style="font-size:11px;color:var(--text2);font-family:var(--mono)"></span>
-        </div>
-      </div>
-      <div class="pb-sc" style="max-height:560px;overflow-y:auto">
-        <table class="dt"><thead><tr><th>Kund</th><th>Tel</th><th>Adress</th><th>Ordrar</th><th>Totalt spenderat</th><th>Senaste</th><th>Åtgärd</th></tr></thead><tbody id="customers-body"></tbody></table>
+      <div class="panel-header"><span class="panel-title">Restauranger</span></div>
+      <div class="panel-body-scroll" style="max-height:520px">
+        <table class="data-table" id="restaurants-table">
+          <thead><tr><th>Namn</th><th>Telefon</th><th>Adress</th><th>Öppettider</th><th>Status</th><th>Ordrar totalt</th><th>Åtgärder</th></tr></thead>
+          <tbody id="restaurants-body"></tbody>
+        </table>
       </div>
     </div>
   </div>
-  <!-- BLACKLIST -->
+
+  <!-- RIDERS PAGE -->
+  <div class="page" id="page-riders">
+    <div class="panel">
+      <div class="panel-header"><span class="panel-title">Bud</span></div>
+      <div class="panel-body-scroll" style="max-height:520px">
+        <table class="data-table" id="riders-table">
+          <thead><tr><th>Namn</th><th>E-post</th><th>Telefon</th><th>Status</th><th>Leveranser</th><th>Åtgärder</th></tr></thead>
+          <tbody id="riders-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- MENU PAGE -->
+  <div class="page" id="page-menu">
+    <div class="panel" style="margin-bottom:20px">
+      <div class="panel-header">
+        <span class="panel-title">Hantera menyer</span>
+        <div style="display:flex;gap:8px">
+          <select class="inp" style="width:200px" id="menu-rest-filter" onchange="loadMenuItems()">
+            <option value="">Välj restaurang...</option>
+          </select>
+          <button class="btn btn-cyan btn-sm" onclick="openAddMenuItem()">+ Lägg till rätt</button>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div class="menu-grid" id="menu-grid"><div style="color:var(--text2);font-family:var(--mono);font-size:12px">Välj en restaurang ovan för att hantera dess meny.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONVERSATIONS PAGE -->
+  <div class="page" id="page-conversations">
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Aktiva konversationer</span></div>
+        <div class="panel-body"><div class="chat-list" id="conv-list"></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header">
+          <span class="panel-title" id="conv-detail-title">Välj en konversation</span>
+          <button class="btn btn-ghost btn-sm" onclick="closeConvDetail()">✕ Stäng</button>
+        </div>
+        <div class="chat-msgs" id="conv-msgs" style="max-height:400px"></div>
+        <div class="chat-input-row">
+          <input class="inp" id="admin-msg-inp" placeholder="Skriv som admin..."/>
+          <button class="btn btn-cyan btn-sm" onclick="sendAdminMsg()">Skicka</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACCOUNTS PAGE -->
+  <div class="page" id="page-accounts">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Skapa konto</span></div>
+        <div class="panel-body">
+          <div class="form-group">
+            <label class="lbl">Roll</label>
+            <select class="inp" id="new-role" onchange="updateAccountForm()">
+              <option value="restaurant">Restaurang</option>
+              <option value="rider">Bud</option>
+            </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="lbl">Namn</label>
+              <input class="inp" id="new-name" placeholder="Restaurangnamn / Förnamn Efternamn"/>
+            </div>
+            <div class="form-group">
+              <label class="lbl">E-post</label>
+              <input class="inp" id="new-email" type="email" placeholder="namn@atlasdel.se"/>
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label class="lbl">Lösenord</label>
+              <input class="inp" id="new-pass" type="password" placeholder="Minst 8 tecken"/>
+            </div>
+            <div class="form-group">
+              <label class="lbl">Telefon</label>
+              <input class="inp" id="new-phone" placeholder="+46 ..."/>
+            </div>
+          </div>
+          <div class="form-group" id="rest-assign-group">
+            <label class="lbl">Tilldela restaurang</label>
+            <select class="inp" id="new-rest-assign"><option value="">Välj restaurang...</option></select>
+          </div>
+          <button class="btn btn-violet" style="width:100%;justify-content:center" onclick="createAccount()">Skapa konto</button>
+          <div id="create-result" style="margin-top:12px;font-size:12px;font-family:var(--mono)"></div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Befintliga konton</span></div>
+        <div class="panel-body-scroll" style="max-height:460px">
+          <table class="data-table" id="accounts-table">
+            <thead><tr><th>Namn</th><th>E-post</th><th>Roll</th><th>Skapad</th></tr></thead>
+            <tbody id="accounts-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLACKLIST PAGE -->
   <div class="page" id="page-blacklist">
     <div class="panel">
-      <div class="ph"><span class="pt">Blacklist</span><button class="btn btn-red btn-sm" onclick="openAddBlacklist()">+ Lägg till</button></div>
-      <div class="pb-sc" style="max-height:500px;overflow-y:auto">
-        <table class="dt"><thead><tr><th>E-post</th><th>Anledning</th><th>Datum</th><th>Åtgärd</th></tr></thead><tbody id="blacklist-body"></tbody></table>
+      <div class="panel-header">
+        <span class="panel-title">Blacklist</span>
+        <button class="btn btn-red btn-sm" onclick="openAddBlacklist()">+ Lägg till</button>
+      </div>
+      <div class="panel-body-scroll" style="max-height:480px">
+        <table class="data-table" id="blacklist-table">
+          <thead><tr><th>E-post</th><th>Anledning</th><th>Datum</th><th>Åtgärder</th></tr></thead>
+          <tbody id="blacklist-body"></tbody>
+        </table>
       </div>
     </div>
   </div>
-  <!-- ANALYTICS — FIXED -->
+
+  <!-- KUNDER PAGE -->
+  <div class="page" id="page-customers">
+    <div class="panel" style="margin-bottom:20px">
+      <div class="panel-header" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+        <span class="panel-title">Kunder</span>
+        <input id="cust-search" placeholder="Sök på namn, e-post eller telefon..." oninput="filterCustomers()" style="flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none"/>
+        <span id="cust-count" style="font-size:11px;color:var(--text2);font-family:var(--mono);white-space:nowrap"></span>
+      </div>
+      <div class="panel-body-scroll" style="max-height:560px">
+        <table class="data-table" id="customers-table">
+          <thead>
+            <tr>
+              <th>Kund</th>
+              <th>E-post</th>
+              <th>Telefon</th>
+              <th>Adress</th>
+              <th>Ordrar</th>
+              <th>Totalt spenderat</th>
+              <th>Senaste order</th>
+              <th>Åtgärder</th>
+            </tr>
+          </thead>
+          <tbody id="customers-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- BLACKLIST PAGE -->
   <div class="page" id="page-analytics">
-    <div class="kpi-grid" style="margin-bottom:18px">
-      <div class="kpi cy"><div class="kpi-lbl">Totala ordrar</div><div class="kpi-val" id="an-total">–</div></div>
-      <div class="kpi gr"><div class="kpi-lbl">Total intäkt</div><div class="kpi-val" id="an-rev">–</div></div>
-      <div class="kpi vi"><div class="kpi-lbl">Snittpris/order</div><div class="kpi-val" id="an-avg">–</div></div>
-      <div class="kpi or"><div class="kpi-lbl">Levererade</div><div class="kpi-val" id="an-del">–</div></div>
+    <div class="kpi-grid" style="margin-bottom:20px">
+      <div class="kpi cyan"><div class="kpi-label">Totala ordrar</div><div class="kpi-val" id="an-total">–</div></div>
+      <div class="kpi green"><div class="kpi-label">Total intäkt</div><div class="kpi-val" id="an-rev">–</div></div>
+      <div class="kpi violet"><div class="kpi-label">Snittpris/order</div><div class="kpi-val" id="an-avg">–</div></div>
+      <div class="kpi orange"><div class="kpi-label">Medelavstånd</div><div class="kpi-val" id="an-dist">–</div></div>
     </div>
-    <div class="g2">
-      <div class="panel"><div class="ph"><span class="pt">Intäkter 30 dagar</span></div><div class="pb"><div style="height:220px"><canvas id="an-rev-chart"></canvas></div></div></div>
-      <div class="panel"><div class="ph"><span class="pt">Ordrar per status</span></div><div class="pb"><div style="height:220px"><canvas id="an-status-chart"></canvas></div></div></div>
+    <div class="grid-2">
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Intäkter per dag (30 dagar)</span></div>
+        <div class="panel-body"><div style="height:220px"><canvas id="an-rev-chart"></canvas></div></div>
+      </div>
+      <div class="panel">
+        <div class="panel-header"><span class="panel-title">Ordrar per status</span></div>
+        <div class="panel-body"><div style="height:220px"><canvas id="an-status-chart"></canvas></div></div>
+      </div>
     </div>
-    <div class="panel" style="margin-top:18px">
-      <div class="ph"><span class="pt">Top restauranger</span></div>
-      <div class="pb-sc" style="max-height:300px;overflow-y:auto">
-        <table class="dt"><thead><tr><th>Restaurang</th><th>Ordrar</th><th>Intäkt</th></tr></thead><tbody id="top-rest-body"></tbody></table>
+    <div class="panel" style="margin-top:20px">
+      <div class="panel-header"><span class="panel-title">Top restauranger</span></div>
+      <div class="panel-body-scroll" style="max-height:300px">
+        <table class="data-table" id="top-rest-table">
+          <thead><tr><th>Restaurang</th><th>Ordrar</th><th>Intäkt mat</th></tr></thead>
+          <tbody id="top-rest-body"></tbody>
+        </table>
       </div>
     </div>
   </div>
-  <!-- SETTINGS -->
+
+  <!-- SETTINGS PAGE -->
   <div class="page" id="page-settings">
     <div class="settings-grid">
-      <div class="sc">
-        <div class="sc-title">Leveranstaxa</div>
-        <div class="fg"><label class="lbl">Grundavgift (kr)</label><input class="inp" id="set-base" type="number" placeholder="29"/></div>
-        <div class="fg"><label class="lbl">Taxa per km (kr)</label><input class="inp" id="set-km" type="number" placeholder="8"/></div>
-        <button class="btn btn-cy" onclick="saveSettings()">Spara</button>
+      <div class="settings-card">
+        <div class="settings-title">Leveranstaxa</div>
+        <div class="form-group">
+          <label class="lbl">Grundavgift (kr)</label>
+          <input class="inp" id="set-base" type="number" placeholder="29"/>
+        </div>
+        <div class="form-group">
+          <label class="lbl">Taxa per km (kr)</label>
+          <input class="inp" id="set-km" type="number" placeholder="8"/>
+        </div>
+        <button class="btn btn-cyan" onclick="saveSettings()">Spara leveranstaxa</button>
       </div>
-      <div class="sc">
-        <div class="sc-title">Testa beställning</div>
-        <div class="fg"><label class="lbl">Restaurang</label><select class="inp" id="test-rest"><option value="">Välj...</option></select></div>
-        <button class="btn btn-ghost" style="width:100%;justify-content:center" onclick="createTestOrder()">⚡ Skapa testorder</button>
-        <div class="sc-title" style="margin-top:18px">Platform</div>
-        <div style="font-size:11px;font-family:var(--mono);color:var(--text2);line-height:2.2">
-          <div>Supabase: <span style="color:var(--green)">● Ansluten</span></div>
-          <div>Stripe: <span style="color:var(--green)">● Test mode</span></div>
-          <div>Realtime: <span style="color:var(--green)">● Aktiv</span></div>
-          <div>Stad: Nyköping, SE</div>
-          <div>Version: 3.2.0</div>
+      <div class="settings-card">
+        <div class="settings-title">Platform-info</div>
+        <div style="font-size:12px;font-family:var(--mono);color:var(--text2);line-height:2">
+          <div>Supabase: <span style="color:var(--green)">●</span> Ansluten</div>
+          <div>Stripe: <span style="color:var(--green)">●</span> Test mode</div>
+          <div>Realtime: <span style="color:var(--green)">●</span> Aktiv</div>
+          <div>Stadt: Nyköping, SE</div>
+          <div>Modell: 0% restaurangavgift</div>
+          <div>Version: 3.0.0</div>
         </div>
       </div>
+    </div>
+  </div>
+
+</div><!-- /main -->
+
+<!-- CHAT MODAL -->
+<div class="chat-modal" id="chat-modal">
+  <div class="chat-box">
+    <div class="chat-box-header">
+      <span class="chat-box-title" id="chat-modal-title">Order #–––</span>
+      <button class="btn btn-ghost btn-sm" onclick="closeChatModal()">✕</button>
+    </div>
+    <div class="chat-msgs" id="chat-modal-msgs"></div>
+    <div class="chat-input-row">
+      <input class="inp" id="chat-modal-inp" placeholder="Skriv som admin..."/>
+      <button class="btn btn-cyan btn-sm" onclick="sendChatFromModal()">Skicka</button>
     </div>
   </div>
 </div>
+
+<!-- NOTIFICATION -->
 <div class="notif" id="notif"></div>
+
 <script>
+// ─── SUPABASE ───────────────────────────────────────────────
 const SB = supabase.createClient(
   'https://vgtdswplzuhbhhlmxrgg.supabase.co',
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZndGRzd3BsenVoYmhobG14cmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMTY2ODIsImV4cCI6MjA4ODU5MjY4Mn0.82sk-40cQo7NxeRWUgthTzp_fk1TlBcqPchrBGGIFnU'
 );
-const ADMIN_PIN = '1234';
-let CU=null, allOrders=[], allRiders=[], allRestaurants=[], allCustomers=[];
-let chatModalOrderId=null, chatModalCh='customer', convOrderId=null;
-let ridersMap=null, riderMarkers={};
-let revChart=null, ordChart=null, anRevChart=null, anStatusChart=null;
-let menuItems=[], menuCats=[], editingMiId=null, curMenuRestId=null;
-let pinInput='';
 
+// ─── STATE ───────────────────────────────────────────────────
+let currentUser = null;
+let allOrders = [];
+let allRiders = [];
+let allRestaurants = [];
+let currentChatOrderId = null;
+let currentConvOrderId = null;
+let ridersMap = null;
+let riderMarkers = {};
+let revChart = null, ordChart = null, anRevChart = null, anStatusChart = null;
+
+// ─── LOGIN ───────────────────────────────────────────────────
 async function doLogin() {
-  const email=document.getElementById('lemail').value.trim(), pass=document.getElementById('lpass').value;
-  const err=document.getElementById('lerr'); err.style.display='none';
-  const {data,error}=await SB.auth.signInWithPassword({email,password:pass});
-  if(error){err.textContent=error.message;err.style.display='block';return}
-  const {data:prof}=await SB.from('profiles').select('role').eq('id',data.user.id).single();
-  if(!prof||prof.role!=='admin'){await SB.auth.signOut();err.textContent='Åtkomst nekad';err.style.display='block';return}
-  CU=data.user; document.getElementById('sbUser').textContent=email;
-  document.getElementById('login-screen').style.display='none';
+  const email = document.getElementById('login-email').value.trim();
+  const pass = document.getElementById('login-pass').value;
+  const err = document.getElementById('login-err');
+  err.style.display = 'none';
+  const { data, error } = await SB.auth.signInWithPassword({ email, password: pass });
+  if (error) { err.textContent = error.message; err.style.display = 'block'; return; }
+  const { data: prof } = await SB.from('profiles').select('role').eq('id', data.user.id).single();
+  if (!prof || prof.role !== 'admin') {
+    await SB.auth.signOut();
+    err.textContent = 'Åtkomst nekad — inte ett adminkonto.';
+    err.style.display = 'block';
+    return;
+  }
+  currentUser = data.user;
+  document.getElementById('sidebar-user').textContent = email;
+  document.getElementById('login-screen').style.display = 'none';
   init();
 }
-async function doLogout(){await SB.auth.signOut();location.reload()}
-document.getElementById('lpass').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin()});
+async function doLogout() {
+  await SB.auth.signOut();
+  location.reload();
+}
+document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
+// ─── INIT ────────────────────────────────────────────────────
 async function init() {
-  await Promise.all([loadOrders(),loadRiders(),loadRestaurants(),loadSettings()]);
-  updateKPIs(); buildDashCharts(); initRidersMap();
-  subscribeRealtime(); populateRestSelects();
-  loadAccounts(); loadBlacklist(); loadConversations(); loadAnalytics(); loadCustomers();
+  await Promise.all([loadOrders(), loadRiders(), loadRestaurants(), loadSettings()]);
+  updateKPIs();
+  buildDashCharts();
+  initRidersMap();
+  subscribeRealtime();
+  populateRestaurantSelects();
+  loadAccounts();
+  loadBlacklist();
+  loadConversations();
+  loadAnalytics();
 }
 
-function subscribeRealtime() {
-  SB.channel('admin-rt-v3')
-    .on('postgres_changes',{event:'*',schema:'public',table:'orders'},async()=>{
-      await loadOrders(); updateKPIs(); buildDashCharts();
-      if(document.getElementById('page-orders').classList.contains('active'))renderOrdersTable();
-      if(document.getElementById('page-dashboard').classList.contains('active'))renderDashOrders();
-    })
-    .on('postgres_changes',{event:'*',schema:'public',table:'riders'},async()=>{
-      await loadRiders(); updateKPIs(); updateRiderMarkers();
-      if(document.getElementById('page-riders').classList.contains('active'))renderRidersTable();
-    })
-    .on('postgres_changes',{event:'*',schema:'public',table:'restaurants'},async()=>{
-      await loadRestaurants(); updateKPIs();
-      if(document.getElementById('page-restaurants').classList.contains('active'))renderRestaurantsTable();
-    }).subscribe();
-}
-
+// ─── PAGE NAV ────────────────────────────────────────────────
 function setPage(name) {
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
-  document.getElementById('page-'+name).classList.add('active');
-  const titles={dashboard:'Dashboard',orders:'Beställningar',restaurants:'Restauranger',riders:'Bud',menu:'Menyer',conversations:'Konversationer',accounts:'Konton',customers:'Kunder',blacklist:'Blacklist',analytics:'Analys',settings:'Inställningar'};
-  document.getElementById('page-title').textContent=titles[name]||name;
-  [...document.querySelectorAll('nav button')].find(b=>b.textContent.trim().toLowerCase().startsWith((titles[name]||name).toLowerCase().slice(0,4)))?.classList.add('active');
-  if(name==='accounts'){openPinOv();return}
-  if(name==='orders')renderOrdersTable();
-  if(name==='restaurants')renderRestaurantsTable();
-  if(name==='riders')renderRidersTable();
-  if(name==='analytics')loadAnalytics();
-  if(name==='conversations')loadConversations();
-  if(name==='menu')populateMenuRestFilter();
-  if(name==='customers')loadCustomers();
-  if(name==='settings')populateTestRestSelect();
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + name).classList.add('active');
+  const titles = {dashboard:'Dashboard',orders:'Beställningar',restaurants:'Restauranger',riders:'Bud',menu:'Menyer',conversations:'Konversationer',accounts:'Konton',customers:'Kunder',blacklist:'Blacklist',analytics:'Analys',settings:'Inställningar'};
+  document.getElementById('page-title').textContent = titles[name] || name;
+  document.querySelectorAll('nav button').forEach(b => { if (b.textContent.trim().toLowerCase().includes(name.substring(0,4))) b.classList.add('active'); });
+  if (name === 'orders') renderOrdersTable();
+  if (name === 'restaurants') renderRestaurantsTable();
+  if (name === 'riders') renderRidersTable();
+  if (name === 'analytics') loadAnalytics();
+  if (name === 'conversations') loadConversations();
+  if (name === 'menu') populateMenuRestaurantFilter();
+  if (name === 'customers') loadCustomers();
 }
 
-async function loadOrders(){const {data}=await SB.from('orders').select('*').order('created_at',{ascending:false}).limit(500);allOrders=data||[];renderDashOrders();renderOrdersTable()}
-async function loadRiders(){const {data}=await SB.from('riders').select('*');allRiders=data||[];renderRidersTable()}
-async function loadRestaurants(){const {data}=await SB.from('restaurants').select('*');allRestaurants=data||[];renderRestaurantsTable()}
-async function loadSettings(){
-  const {data}=await SB.from('settings').select('*');
-  if(data){
-    const b=data.find(r=>r.key==='delivery_base_fee');const k=data.find(r=>r.key==='delivery_per_km');
-    if(b)document.getElementById('set-base').value=b.value;
-    if(k)document.getElementById('set-km').value=k.value;
+// ─── LOAD DATA ───────────────────────────────────────────────
+async function loadOrders() {
+  const { data } = await SB.from('orders').select('*').order('created_at', { ascending: false }).limit(200);
+  allOrders = data || [];
+  renderDashOrders();
+  renderOrdersTable();
+}
+async function loadRiders() {
+  const { data } = await SB.from('riders').select('*');
+  allRiders = data || [];
+  renderRidersTable();
+}
+async function loadRestaurants() {
+  const { data } = await SB.from('restaurants').select('*');
+  allRestaurants = data || [];
+  renderRestaurantsTable();
+}
+async function loadSettings() {
+  const { data } = await SB.from('settings').select('*');
+  if (data) {
+    const base = data.find(r => r.key === 'delivery_base_fee');
+    const km = data.find(r => r.key === 'delivery_per_km');
+    if (base) document.getElementById('set-base').value = base.value;
+    if (km) document.getElementById('set-km').value = km.value;
   }
 }
 
-// FIX: Count riders by status field OR online boolean
+// ─── KPIs ────────────────────────────────────────────────────
 function updateKPIs() {
-  const today=new Date().toISOString().slice(0,10);
-  const todayO=allOrders.filter(o=>o.created_at?.startsWith(today));
-  const todayRev=todayO.filter(o=>o.status==='delivered').reduce((s,o)=>s+(o.total_amount||o.total||0),0);
-  // FIX: check both status='online' AND online===true
-  const onlineRiders=allRiders.filter(r=>r.status==='online'||r.online===true).length;
-  const openRests=allRestaurants.filter(r=>r.is_open).length;
-  document.getElementById('kpi-orders').textContent=todayO.length;
-  document.getElementById('kpi-rev').textContent=todayRev.toFixed(0)+' kr';
-  document.getElementById('kpi-riders').textContent=onlineRiders;
-  document.getElementById('kpi-restaurants').textContent=openRests;
+  const today = new Date().toISOString().slice(0, 10);
+  const todayOrders = allOrders.filter(o => o.created_at && o.created_at.startsWith(today));
+  const todayRev = todayOrders.reduce((s, o) => s + (o.total || 0), 0);
+  const onlineRiders = allRiders.filter(r => r.online).length;
+  document.getElementById('kpi-orders').textContent = todayOrders.length;
+  document.getElementById('kpi-rev').textContent = todayRev.toFixed(0) + ' kr';
+  document.getElementById('kpi-riders').textContent = onlineRiders;
+  document.getElementById('kpi-restaurants').textContent = allRestaurants.filter(r => r.is_open).length;
 }
 
-// FIX: Correct status badge labels
-// pending/paid = "Ny", accepted = "Mottagen", ready = "Klar", picked = "Hämtad", delivered = "Levererad"
-function statusBadge(st) {
-  const m={
-    pending:'b-ny Ny',paid:'b-ny Betald',
-    accepted:'b-mottagen Mottagen',
-    preparing:'b-tillagas Tillagas',
-    ready:'b-klar Klar',
-    picked:'b-hamtad Hämtad',
-    delivered:'b-levererad Levererad'
-  };
-  const [cls,lbl]=(m[st]||'b-ny Ny').split(' ');
-  return `<span class="badge ${cls}">${lbl}</span>`;
+// ─── HOLOGRAM DATA BUILDER ───────────────────────────────────
+function buildHolo(order) {
+  const ts = order.created_at ? new Date(order.created_at).toLocaleString('sv-SE') : '–';
+  return [
+    `ORDER      ${order.order_number || order.id?.slice(0,8) || '–'}`,
+    `─────────────────────────────────`,
+    `Kund       ${order.customer_name || '–'}`,
+    `Telefon    ${order.customer_phone || '–'}`,
+    `Adress     ${order.customer_address || order.delivery_address || '–'}`,
+    `─────────────────────────────────`,
+    `Restaurang ${order.restaurant_name || '–'}`,
+    `Bud        ${order.rider_name || 'Ej tilldelad'}`,
+    `─────────────────────────────────`,
+    `Mat        ${(order.subtotal || 0).toFixed(0)} kr`,
+    `Leverans   ${(order.delivery_fee || 0).toFixed(0)} kr`,
+    `Dricks     ${(order.tip || 0).toFixed(0)} kr`,
+    `TOTALT     ${(order.total || 0).toFixed(0)} kr`,
+    `─────────────────────────────────`,
+    `Tid        ${ts}`,
+    `Status     ${order.status?.toUpperCase() || '–'}`
+  ].join('\n');
 }
 
+// ─── RENDER DASH ORDERS ──────────────────────────────────────
 function renderDashOrders() {
-  const tbody=document.getElementById('dash-orders-body');if(!tbody)return;
-  tbody.innerHTML=allOrders.slice(0,15).map(o=>`<tr>
-    <td style="color:var(--cyan);font-family:var(--mono);font-size:11px">${o.order_number||o.id?.slice(0,8)||'–'}</td>
-    <td>${o.customer_name||'–'}</td><td>${o.restaurant_name||'–'}</td>
-    <td style="font-family:var(--mono)">${(o.total_amount||o.total||0).toFixed(0)} kr</td>
-    <td>${statusBadge(o.status)}</td>
-  </tr>`).join('');
+  const tbody = document.getElementById('dash-orders-body');
+  const recent = allOrders.slice(0, 12);
+  tbody.innerHTML = recent.map(o => `
+    <tr class="holo-trigger" data-holo="${escHolo(buildHolo(o))}" onmousemove="setHoloPos(event)">
+      <td style="color:var(--cyan);font-family:var(--mono)">${o.order_number || o.id?.slice(0,8) || '–'}</td>
+      <td>${o.customer_name || '–'}</td>
+      <td>${o.restaurant_name || '–'}</td>
+      <td style="font-family:var(--mono)">${(o.total||0).toFixed(0)} kr</td>
+      <td>${statusBadge(o.status)}</td>
+    </tr>`).join('');
 }
 
+// ─── RENDER ORDERS TABLE ─────────────────────────────────────
 function renderOrdersTable(orders) {
-  const list=orders||allOrders;
-  const tbody=document.getElementById('orders-body');if(!tbody)return;
-  tbody.innerHTML=list.map(o=>{
-    const ts=o.created_at?new Date(o.created_at).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}):'-';
-    return`<tr>
-      <td style="color:var(--cyan);font-family:var(--mono);font-size:11px">${o.order_number||o.id?.slice(0,8)||'–'}</td>
-      <td>${o.customer_name||'–'}</td>
-      <td style="font-family:var(--mono);font-size:11px">${o.customer_phone||'–'}</td>
-      <td style="font-size:11px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.customer_address||o.delivery_address||'–'}</td>
-      <td>${o.restaurant_name||'–'}</td>
-      <td>${o.rider_name||'<span style="color:var(--text2)">–</span>'}</td>
-      <td style="font-family:var(--mono)">${(o.total_amount||o.total||0).toFixed(0)} kr</td>
+  const list = orders || allOrders;
+  const tbody = document.getElementById('orders-body');
+  tbody.innerHTML = list.map(o => {
+    const ts = o.created_at ? new Date(o.created_at).toLocaleTimeString('sv-SE', {hour:'2-digit',minute:'2-digit'}) : '–';
+    return `<tr class="holo-trigger" data-holo="${escHolo(buildHolo(o))}" onmousemove="setHoloPos(event)">
+      <td style="color:var(--cyan);font-family:var(--mono);font-size:11px">${o.order_number || o.id?.slice(0,8) || '–'}</td>
+      <td>${o.customer_name || '–'}</td>
+      <td style="font-family:var(--mono);font-size:11px">${o.customer_phone || '–'}</td>
+      <td style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.customer_address || o.delivery_address || '–'}</td>
+      <td>${o.restaurant_name || '–'}</td>
+      <td>${o.rider_name || '<span style="color:var(--text2)">–</span>'}</td>
+      <td style="font-family:var(--mono)">${(o.total||0).toFixed(0)} kr</td>
       <td style="font-family:var(--mono)">${(o.delivery_fee||0).toFixed(0)} kr</td>
       <td style="font-family:var(--mono);font-size:11px">${ts}</td>
       <td>${statusBadge(o.status)}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="openChatModal('${o.id}','${(o.order_number||o.id?.slice(0,8)||'')}')" >💬</button></td>
+      <td><button class="btn btn-ghost btn-sm" onclick="openChat('${o.id}','${escAttr(o.order_number||o.id?.slice(0,8)||'')}')">💬</button></td>
     </tr>`;
   }).join('');
 }
 
 function filterOrders() {
-  const q=document.getElementById('ord-search').value.toLowerCase(), st=document.getElementById('ord-filter').value;
-  let f=allOrders;
-  if(q)f=f.filter(o=>(o.customer_name||o.restaurant_name||'').toLowerCase().includes(q));
-  if(st)f=f.filter(o=>o.status===st);
-  renderOrdersTable(f);
+  const q = document.getElementById('order-search').value.toLowerCase();
+  const st = document.getElementById('order-filter').value;
+  let filtered = allOrders;
+  if (q) filtered = filtered.filter(o =>
+    (o.customer_name||'').toLowerCase().includes(q) ||
+    (o.order_number||'').toLowerCase().includes(q) ||
+    (o.restaurant_name||'').toLowerCase().includes(q)
+  );
+  if (st) filtered = filtered.filter(o => o.status === st);
+  renderOrdersTable(filtered);
 }
 
+// ─── RENDER RESTAURANTS TABLE ────────────────────────────────
 function renderRestaurantsTable() {
-  const tbody=document.getElementById('restaurants-body');if(!tbody)return;
-  tbody.innerHTML=allRestaurants.map(r=>`<tr>
-    <td style="font-weight:700">${r.name}</td>
-    <td style="font-family:var(--mono);font-size:11px">${r.phone||'–'}</td>
-    <td style="font-size:11px">${r.address||'–'}</td>
-    <td style="font-family:var(--mono);font-size:11px">${r.opening_hours||'–'}</td>
-    <td>${r.is_open?'<span class="badge b-online">Öppen</span>':' <span class="badge b-offline">Stängd</span>'}</td>
-    <td style="font-family:var(--mono)">${allOrders.filter(o=>o.restaurant_id===r.id||o.restaurant_name===r.name).length}</td>
-    <td><button class="btn btn-ghost btn-sm" onclick="toggleRest('${r.id}',${!r.is_open})">${r.is_open?'Stäng':'Öppna'}</button></td>
-  </tr>`).join('');
-}
-async function toggleRest(id,open){await SB.from('restaurants').update({is_open:open}).eq('id',id);await loadRestaurants();notify('Restaurang uppdaterad')}
-
-// FIX: Riders table uses real data, live via subscription
-function renderRidersTable() {
-  const tbody=document.getElementById('riders-body');if(!tbody)return;
-  tbody.innerHTML=allRiders.map(r=>{
-    const isOnline=r.status==='online'||r.online===true;
-    const deliveries=allOrders.filter(o=>o.rider_id===r.id&&o.status==='delivered').length||r.deliveries||0;
-    return`<tr>
-      <td style="font-weight:700">${r.name||'–'}</td>
-      <td style="font-family:var(--mono);font-size:11px">${r.email||'–'}</td>
+  const tbody = document.getElementById('restaurants-body');
+  if (!tbody) return;
+  tbody.innerHTML = allRestaurants.map(r => {
+    const holo = [
+      `RESTAURANG   ${r.name}`,
+      `─────────────────────────────`,
+      `Telefon      ${r.phone||'–'}`,
+      `Adress       ${r.address||'–'}`,
+      `Öppettider   ${r.opening_hours||'–'}`,
+      `Kategori     ${r.category||'–'}`,
+      `─────────────────────────────`,
+      `Status       ${r.is_open?'ÖPPEN':'STÄNGD'}`
+    ].join('\n');
+    return `<tr class="holo-trigger" data-holo="${escHolo(holo)}" onmousemove="setHoloPos(event)">
+      <td style="font-weight:700">${r.name}</td>
       <td style="font-family:var(--mono);font-size:11px">${r.phone||'–'}</td>
-      <td><span class="badge ${isOnline?'b-online':'b-offline'}">${isOnline?'Online':'Offline'}</span></td>
-      <td style="font-family:var(--mono)">${deliveries}</td>
-      <td><button class="btn btn-red btn-sm" onclick="blacklistEmail('${r.email||''}','Bud-konto')">Blacklista</button></td>
+      <td style="font-size:11px">${r.address||'–'}</td>
+      <td style="font-family:var(--mono);font-size:11px">${r.opening_hours||'–'}</td>
+      <td>${r.is_open ? '<span class="badge badge-online">Öppen</span>' : '<span class="badge badge-offline">Stängd</span>'}</td>
+      <td style="font-family:var(--mono)">${allOrders.filter(o=>o.restaurant_name===r.name).length}</td>
+      <td><button class="btn btn-ghost btn-sm" onclick="toggleRestaurant('${r.id}',${!r.is_open})">${r.is_open?'Stäng':'Öppna'}</button></td>
     </tr>`;
   }).join('');
 }
 
-function buildDashCharts() {
-  const days=getLast7Days();
-  const revData=days.map(d=>allOrders.filter(o=>o.created_at?.startsWith(d)&&o.status==='delivered').reduce((s,o)=>s+(o.total_amount||o.total||0),0));
-  const ordData=days.map(d=>allOrders.filter(o=>o.created_at?.startsWith(d)).length);
-  const labels=days.map(d=>d.slice(5));
-  const mkChart=(id,lbl,data,color)=>{const ctx=document.getElementById(id);if(!ctx)return null;return new Chart(ctx,{type:'line',data:{labels,datasets:[{label:lbl,data,borderColor:color,backgroundColor:color+'22',tension:.4,fill:true,pointBackgroundColor:color}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8888AA',font:{family:'JetBrains Mono',size:10}},grid:{color:'#ffffff08'}},y:{ticks:{color:'#8888AA',font:{family:'JetBrains Mono',size:10}},grid:{color:'#ffffff08'}}}}})};
-  if(revChart)revChart.destroy();if(ordChart)ordChart.destroy();
-  revChart=mkChart('rev-chart','Intäkt',revData,'#00D4FF');
-  ordChart=mkChart('ord-chart','Ordrar',ordData,'#7B2FFF');
+async function toggleRestaurant(id, isOpen) {
+  await SB.from('restaurants').update({ is_open: isOpen }).eq('id', id);
+  await loadRestaurants();
+  notify('Restaurang uppdaterad');
 }
 
-function getLast7Days(){return Array.from({length:7},(_,i)=>{const d=new Date();d.setDate(d.getDate()-6+i);return d.toISOString().slice(0,10)})}
-function getLast30Days(){return Array.from({length:30},(_,i)=>{const d=new Date();d.setDate(d.getDate()-29+i);return d.toISOString().slice(0,10)})}
-
-function initRidersMap() {
-  if(ridersMap)return;
-  ridersMap=L.map('riders-map').setView([58.753,17.007],12);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(ridersMap);
-  updateRiderMarkers();
-}
-function updateRiderMarkers() {
-  if(!ridersMap)return;
-  allRiders.filter(r=>r.lat&&r.lng&&(r.status==='online'||r.online===true)).forEach(r=>{
-    const icon=L.divIcon({html:'<div style="background:#00FF88;width:12px;height:12px;border-radius:50%;border:2px solid #000;box-shadow:0 0 10px #00FF88"></div>',className:''});
-    if(riderMarkers[r.id])riderMarkers[r.id].setLatLng([r.lat,r.lng]);
-    else riderMarkers[r.id]=L.marker([r.lat,r.lng],{icon}).addTo(ridersMap).bindPopup(r.name||'Bud');
-  });
-}
-
-// FIX: Analytics — count by restaurant_name (not null check), sum total_amount (not subtracted delivery_fee)
-async function loadAnalytics() {
-  const delivered=allOrders.filter(o=>o.status==='delivered');
-  const totalRev=delivered.reduce((s,o)=>s+(o.total_amount||o.total||0),0);
-  const avg=delivered.length?Math.round(totalRev/delivered.length):0;
-  document.getElementById('an-total').textContent=allOrders.length;
-  document.getElementById('an-rev').textContent=totalRev.toFixed(0)+' kr';
-  document.getElementById('an-avg').textContent=avg+' kr';
-  document.getElementById('an-del').textContent=delivered.length;
-  // Top restaurants by order count, using restaurant_name field
-  const rc={};
-  allOrders.forEach(o=>{
-    const n=o.restaurant_name||o.restaurant_id||'Okänd';
-    if(!rc[n])rc[n]={count:0,rev:0};
-    rc[n].count++;
-    if(o.status==='delivered')rc[n].rev+=(o.total_amount||o.total||0);
-  });
-  const tbody=document.getElementById('top-rest-body');
-  if(tbody)tbody.innerHTML=Object.entries(rc).sort((a,b)=>b[1].count-a[1].count).slice(0,10).map(([n,d])=>
-    `<tr><td style="font-weight:600">${n}</td><td style="font-family:var(--mono)">${d.count}</td><td style="font-family:var(--mono);color:var(--green)">${d.rev.toFixed(0)} kr</td></tr>`
-  ).join('')||'<tr><td colspan="3" style="color:var(--text2);text-align:center;padding:14px">Ingen data</td></tr>';
-  // Charts
-  const days30=getLast30Days();
-  const rev30=days30.map(d=>allOrders.filter(o=>o.created_at?.startsWith(d)&&o.status==='delivered').reduce((s,o)=>s+(o.total_amount||o.total||0),0));
-  const ctx1=document.getElementById('an-rev-chart');
-  if(ctx1){if(anRevChart)anRevChart.destroy();anRevChart=new Chart(ctx1,{type:'bar',data:{labels:days30.map(d=>d.slice(5)),datasets:[{label:'Intäkt',data:rev30,backgroundColor:'#00D4FF44',borderColor:'#00D4FF',borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8888AA',font:{family:'JetBrains Mono',size:9}},grid:{display:false}},y:{ticks:{color:'#8888AA',font:{family:'JetBrains Mono',size:9}},grid:{color:'#ffffff08'}}}}})}
-  const sc={};allOrders.forEach(o=>{sc[o.status]=(sc[o.status]||0)+1});
-  const ctx2=document.getElementById('an-status-chart');
-  if(ctx2){if(anStatusChart)anStatusChart.destroy();anStatusChart=new Chart(ctx2,{type:'doughnut',data:{labels:Object.keys(sc),datasets:[{data:Object.values(sc),backgroundColor:['#FF8C00','#00D4FF','#7B2FFF','#00FF88','#FF4560','#888888'],borderWidth:0}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#E8E8F0',font:{family:'JetBrains Mono',size:10}}}}}})}
-}
-
-async function saveSettings(){
-  const base=document.getElementById('set-base').value,km=document.getElementById('set-km').value;
-  await SB.from('settings').upsert([{key:'delivery_base_fee',value:base},{key:'delivery_per_km',value:km}],{onConflict:'key'});
-  notify('✓ Inställningar sparade');
-}
-function populateTestRestSelect(){const sel=document.getElementById('test-rest');if(!sel)return;sel.innerHTML='<option value="">Välj...</option>'+allRestaurants.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')}
-async function createTestOrder(){
-  const restId=document.getElementById('test-rest')?.value;if(!restId){notify('Välj en restaurang');return}
-  const rest=allRestaurants.find(r=>r.id===restId);
-  const {data:menu}=await SB.from('menu_items').select('*').eq('restaurant_id',restId).limit(2);
-  const items=(menu||[]).map(i=>({id:i.id,name:i.name,price:i.price,quantity:1}));
-  const total=items.reduce((s,i)=>s+i.price,0)+29;
-  const {error}=await SB.from('orders').insert({restaurant_id:restId,restaurant_name:rest?.name||'Test',customer_name:'Test Kund',customer_phone:'+46 700 000 000',customer_address:'Testgatan 1, Nyköping',delivery_address:'Testgatan 1, Nyköping',items:JSON.stringify(items),total_amount:total,total,subtotal:total-29,delivery_fee:29,tip:0,status:'pending',payment_status:'paid'});
-  if(error)notify('Fel: '+error.message);else notify('✅ Testorder skapad!');
-}
-
-// ACCOUNTS
-async function loadAccounts(role){
-  let q=SB.from('profiles').select('*').order('created_at',{ascending:false});
-  if(role)q=q.eq('role',role);
-  const {data}=await q;
-  const tbody=document.getElementById('accounts-body');if(!tbody||!data)return;
-  tbody.innerHTML=data.map(p=>`<tr>
-    <td style="font-weight:600">${p.name||'–'}</td>
-    <td style="font-family:var(--mono);font-size:11px">${p.email||'–'}</td>
-    <td><span class="badge ${p.role==='admin'?'b-levererad':p.role==='restaurant'?'b-mottagen':p.role==='rider'?'b-online':'b-ny'}">${p.role}</span></td>
-    <td style="font-family:var(--mono);font-size:11px">${p.phone||'–'}</td>
-    <td style="font-family:var(--mono);font-size:10px">${p.created_at?.slice(0,10)||'–'}</td>
-  </tr>`).join('');
-}
-function showKonton(role){
-  ['kr','krid','kc'].forEach(id=>{const b=document.getElementById('btn-'+id);if(b){b.classList.remove('btn-cy');b.classList.add('btn-ghost')}});
-  const m={restaurant:'kr',rider:'krid',customer:'kc'};
-  const btn=document.getElementById('btn-'+m[role]);if(btn){btn.classList.remove('btn-ghost');btn.classList.add('btn-cy')}
-  loadAccounts(role);
-}
-function updateAccForm(){const role=document.getElementById('new-role').value;document.getElementById('rest-assign-grp').style.display=role==='restaurant'?'block':'none'}
-async function createAccount(){
-  const role=document.getElementById('new-role').value,name=document.getElementById('new-name').value.trim();
-  const email=document.getElementById('new-email').value.trim(),pass=document.getElementById('new-pass').value;
-  const phone=document.getElementById('new-phone').value.trim(),restId=document.getElementById('new-rest-assign').value;
-  const res=document.getElementById('create-result');
-  if(!name||!email||!pass){res.style.color='var(--red)';res.textContent='⚠ Fyll i alla fält';return}
-  const {data,error}=await SB.auth.signUp({email,password:pass,options:{data:{name}}});
-  if(error){res.style.color='var(--red)';res.textContent='Fel: '+error.message;return}
-  if(data.user){
-    await SB.from('profiles').upsert({id:data.user.id,role,name,email,phone},{onConflict:'id'});
-    if(role==='restaurant'&&restId)await SB.from('restaurants').update({auth_user_id:data.user.id,owner_id:data.user.id,email}).eq('id',restId);
-    if(role==='rider')await SB.from('riders').insert({name,email,phone,auth_user_id:data.user.id,status:'offline'});
-    res.style.color='var(--green)';res.textContent='✓ Konto skapat: '+email;
-    loadAccounts();notify('Konto skapat för '+name);
-    ['new-name','new-email','new-pass','new-phone'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
-  }
-}
-
-// PIN
-function openPinOv(){
-  pinInput='';updatePinDots();document.getElementById('pinErr').textContent='';
-  document.getElementById('pinOv').classList.add('open');
-  const keys=document.getElementById('pinKeys');
-  keys.innerHTML=[1,2,3,4,5,6,7,8,9,'',0,'⌫'].map(k=>`<div class="pin-key" onclick="pinPress(\'${k}\')">${k}</div>`).join('');
-}
-function closePinOv(){document.getElementById('pinOv').classList.remove('open')}
-function pinPress(k){
-  if(k==='⌫')pinInput=pinInput.slice(0,-1);
-  else if(k!==''&&pinInput.length<4)pinInput+=k;
-  updatePinDots();
-  if(pinInput.length===4){
-    if(pinInput===ADMIN_PIN){closePinOv();loadAccounts();populateRestSelects()}
-    else{document.getElementById('pinErr').textContent='Fel PIN';setTimeout(()=>{pinInput='';updatePinDots();document.getElementById('pinErr').textContent=''},1200)}
-  }
-}
-function updatePinDots(){for(let i=0;i<4;i++){const d=document.getElementById('pd'+i);if(d)d.classList.toggle('filled',i<pinInput.length)}}
-
-// CUSTOMERS — LIVE
-let allCustData=[];
-async function loadCustomers(){
-  const {data:orders}=await SB.from('orders').select('customer_name,customer_phone,customer_address,delivery_address,total_amount,total,created_at').order('created_at',{ascending:false});
-  const byName={};
-  (orders||[]).forEach(o=>{
-    const k=(o.customer_name||'unknown').toLowerCase();
-    if(!byName[k])byName[k]={name:o.customer_name||'–',phone:o.customer_phone||'–',address:o.customer_address||o.delivery_address||'–',count:0,total:0,last:o.created_at};
-    byName[k].count++;byName[k].total+=(o.total_amount||o.total||0);
-    if(o.created_at>byName[k].last)byName[k].last=o.created_at;
-  });
-  allCustData=Object.values(byName);
-  document.getElementById('cust-count').textContent=allCustData.length+' kunder';
-  renderCustomersTable(allCustData);
-  // Realtime subscription
-  SB.channel('cust-rt').on('postgres_changes',{event:'*',schema:'public',table:'orders'},()=>loadCustomers()).subscribe();
-}
-function renderCustomersTable(data){
-  const tbody=document.getElementById('customers-body');if(!tbody)return;
-  if(!data.length){tbody.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--text2);padding:20px;font-family:var(--mono)">Inga kunder</td></tr>';return}
-  tbody.innerHTML=data.map(c=>`<tr>
-    <td style="font-weight:600">${c.name}</td>
-    <td style="font-family:var(--mono);font-size:11px">${c.phone}</td>
-    <td style="font-size:11px">${c.address}</td>
-    <td style="font-family:var(--mono)">${c.count}</td>
-    <td style="font-family:var(--mono);color:var(--green)">${c.total.toFixed(0)} kr</td>
-    <td style="font-family:var(--mono);font-size:11px">${c.last?.slice(0,10)||'–'}</td>
-    <td><button class="btn btn-red btn-sm" onclick="blacklistEmail(\'\',\'Kund\')">Blacklista</button></td>
-  </tr>`).join('');
-}
-function filterCustomers(){const q=document.getElementById('cust-search').value.toLowerCase();renderCustomersTable(allCustData.filter(c=>(c.name||c.phone||c.address||'').toLowerCase().includes(q)))}
-
-// BLACKLIST
-async function loadBlacklist(){
-  const {data}=await SB.from('blacklist').select('*').order('created_at',{ascending:false});
-  const tbody=document.getElementById('blacklist-body');if(!tbody||!data)return;
-  tbody.innerHTML=!data.length?'<tr><td colspan="4" style="text-align:center;color:var(--text2);padding:14px">Tom blacklist</td></tr>':
-    data.map(b=>`<tr><td style="font-family:var(--mono)">${b.email||'–'}</td><td>${b.reason||'–'}</td><td style="font-family:var(--mono);font-size:10px">${b.created_at?.slice(0,10)||'–'}</td><td><button class="btn btn-ghost btn-sm" onclick="removeBlacklist(\'${b.id}\')">Ta bort</button></td></tr>`).join('');
-}
-async function blacklistEmail(email,reason){
-  const e=email||prompt('E-post:');if(!e)return;const r=reason||prompt('Anledning:');if(!r)return;
-  await SB.from('blacklist').insert({email:e,reason:r,created_by:CU?.id});loadBlacklist();notify('Blacklistad: '+e);
-}
-async function removeBlacklist(id){await SB.from('blacklist').delete().eq('id',id);loadBlacklist();notify('Borttagen')}
-function openAddBlacklist(){const e=prompt('E-post:');if(!e)return;const r=prompt('Anledning:');if(!r)return;blacklistEmail(e,r)}
-
-// CHAT MODAL
-async function openChatModal(orderId, orderNum){
-  chatModalOrderId=orderId;chatModalCh='customer';
-  document.getElementById('chatModalTitle').textContent='Order #'+orderNum;
-  document.getElementById('chatModal').classList.add('open');
-  document.querySelectorAll('.ch-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('ccht-customer').classList.add('active');
-  await loadChatModalMsgs();
-}
-function closeChatModal(){document.getElementById('chatModal').classList.remove('open');chatModalOrderId=null}
-function switchChatCh(ch){
-  chatModalCh=ch;
-  document.querySelectorAll('.ch-tab').forEach(t=>t.classList.remove('active'));
-  document.getElementById('ccht-'+ch).classList.add('active');
-  if(chatModalOrderId)loadChatModalMsgs();
-}
-async function loadChatModalMsgs(){
-  let q=SB.from('chats').select('*').eq('order_id',chatModalOrderId).order('created_at');
-  if(chatModalCh!=='all')q=q.eq('channel',chatModalCh);
-  const {data}=await q;
-  const el=document.getElementById('chatModalMsgs');if(!el)return;
-  el.innerHTML=(data||[]).map(m=>`<div class="cm ${m.sender_role==='admin'?'admin':'other'}">
-    <div class="cm-sender">${m.sender_name||m.sender_role} · ${new Date(m.created_at).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</div>
-    ${m.message}</div>`).join('')||'<div style="color:var(--text2);font-size:12px;text-align:center;padding:18px;font-family:var(--mono)">Inga meddelanden</div>';
-  el.scrollTop=el.scrollHeight;
-}
-async function sendChatFromModal(){
-  if(!chatModalOrderId)return;
-  const inp=document.getElementById('chatModalInp'),msg=inp.value.trim();if(!msg)return;inp.value='';
-  await SB.from('chats').insert({order_id:chatModalOrderId,sender_role:'admin',sender_name:'Admin',message:msg,channel:chatModalCh,sender_id:CU?.id});
-  await loadChatModalMsgs();
-}
-
-// CONVERSATIONS
-async function loadConversations(){
-  const {data}=await SB.from('chats').select('order_id,message,sender_name,sender_role,created_at').order('created_at',{ascending:false});
-  if(!data)return;
-  const grouped={};
-  data.forEach(m=>{if(!grouped[m.order_id])grouped[m.order_id]={order_id:m.order_id,last:m.message,sender:m.sender_name,time:m.created_at,count:0};grouped[m.order_id].count++});
-  const el=document.getElementById('conv-list-wrap');if(!el)return;
-  const entries=Object.values(grouped).slice(0,30);
-  el.innerHTML=entries.length===0?'<div style="color:var(--text2);font-size:12px;font-family:var(--mono);padding:14px">Inga konversationer</div>':
-    entries.map(g=>`<div style="background:var(--bg3);border:1px solid var(--border);border-radius:9px;padding:11px 13px;cursor:pointer;margin-bottom:6px;transition:.15s" onclick="openConvDetail('${g.order_id}')" onmouseover="this.style.borderColor='var(--cyan)'" onmouseout="this.style.borderColor='var(--border)'">
-      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-        <span style="font-size:12px;font-weight:700;color:var(--cyan)">Order ${g.order_id?.slice(0,8)}</span>
-        <span style="font-size:10px;color:var(--text2);font-family:var(--mono)">${new Date(g.time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</span>
-      </div>
-      <div style="font-size:11px;color:var(--text2)">${g.sender||'?'}: ${(g.last||'...').slice(0,55)}</div>
-    </div>`).join('');
-}
-async function openConvDetail(orderId){
-  convOrderId=orderId;
-  document.getElementById('conv-detail-title').textContent='Order '+orderId.slice(0,8)+' — Alla kanaler';
-  const {data}=await SB.from('chats').select('*').eq('order_id',orderId).order('created_at');
-  const el=document.getElementById('conv-msgs');if(!el)return;
-  el.innerHTML=(data||[]).map(m=>`<div class="cm ${m.sender_role==='admin'?'admin':'other'}">
-    <div class="cm-sender">${m.sender_name||m.sender_role} · [${m.channel||'?'}] · ${new Date(m.created_at).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</div>
-    ${m.message}</div>`).join('')||'<div style="color:var(--text2);font-size:12px;text-align:center;padding:16px;font-family:var(--mono)">Inga meddelanden</div>';
-  el.scrollTop=el.scrollHeight;
-}
-function closeConvDetail(){convOrderId=null;document.getElementById('conv-detail-title').textContent='Välj konversation';document.getElementById('conv-msgs').innerHTML=''}
-async function sendAdminMsg(){
-  if(!convOrderId)return;
-  const inp=document.getElementById('admin-msg-inp'),msg=inp.value.trim();if(!msg)return;inp.value='';
-  await SB.from('chats').insert({order_id:convOrderId,sender_role:'admin',sender_name:'Admin',message:msg,channel:'dev',sender_id:CU?.id});
-  await openConvDetail(convOrderId);
-}
-
-// MENU MANAGEMENT
-function populateRestSelects(){
-  ['menu-rest-filter','new-rest-assign'].forEach(id=>{const sel=document.getElementById(id);if(!sel)return;sel.innerHTML='<option value="">Välj restaurang...</option>'+allRestaurants.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')});
-}
-function populateMenuRestFilter(){populateRestSelects()}
-async function loadMenuItems(){
-  const restId=document.getElementById('menu-rest-filter')?.value;curMenuRestId=restId;
-  if(!restId){document.getElementById('menu-grid').innerHTML='<div style="color:var(--text2);font-family:var(--mono);font-size:12px">Välj en restaurang ovan.</div>';return}
-  const {data:items}=await SB.from('menu_items').select('*').eq('restaurant_id',restId).order('sort_order');
-  const {data:cats}=await SB.from('menu_categories').select('*').eq('restaurant_id',restId).order('sort_order');
-  menuItems=items||[];
-  menuCats=(cats&&cats.length)?cats.map(c=>c.name):[...new Set(menuItems.map(i=>i.category).filter(Boolean))];
-  if(!menuCats.length)menuCats=['Övrigt'];
-  const grid=document.getElementById('menu-grid');
-  if(!menuItems.length){grid.innerHTML='<div style="color:var(--text2);font-family:var(--mono);font-size:12px">Inga rätter ännu.</div>';return}
-  grid.innerHTML=menuItems.map(item=>{
-    const ads=(item.addons||[]).map(a=>`<span class="addon-tag-s">${a.name} +${a.price}kr</span>`).join('');
-    return`<div class="mcard">
-      <div class="mcard-name">${item.emoji||'🍽️'} ${item.name}</div>
-      <div class="mcard-meta">${item.category||'–'} · ${item.price} kr${!item.available?' · <span style="color:var(--red)">Ej tillgänglig</span>':''}</div>
-      ${ads?`<div style="display:flex;flex-wrap:wrap;gap:3px;margin-top:5px">${ads}</div>`:''}
-      <div class="mcard-acts">
-        <button class="btn btn-ghost btn-sm" onclick="openMiModal('${item.id}')">✏ Redigera</button>
-        <button class="btn btn-red btn-sm" onclick="delMiById('${item.id}')">✕</button>
-      </div>
-    </div>`;
+// ─── RENDER RIDERS TABLE ─────────────────────────────────────
+function renderRidersTable() {
+  const tbody = document.getElementById('riders-body');
+  if (!tbody) return;
+  tbody.innerHTML = allRiders.map(r => {
+    const holo = [
+      `BUD          ${r.name||'–'}`,
+      `─────────────────────────────`,
+      `Telefon      ${r.phone||'–'}`,
+      `Status       ${r.online?'ONLINE':'OFFLINE'}`,
+      `Position     ${r.lat&&r.lng?`${r.lat?.toFixed(4)}, ${r.lng?.toFixed(4)}`:'Ej tillgänglig'}`,
+      `─────────────────────────────`,
+      `Leveranser   ${r.deliveries||0}`
+    ].join('\n');
+    return `<tr class="holo-trigger" data-holo="${escHolo(holo)}" onmousemove="setHoloPos(event)">
+      <td style="font-weight:700">${r.name||'–'}</td>
+      <td style="font-family:var(--mono);font-size:11px">${r.email||'–'}</td>
+      <td style="font-family:var(--mono);font-size:11px">${r.phone||'–'}</td>
+      <td>${r.online ? '<span class="badge badge-online">Online</span>' : '<span class="badge badge-offline">Offline</span>'}</td>
+      <td style="font-family:var(--mono)">${r.deliveries||0}</td>
+      <td><button class="btn btn-red btn-sm" onclick="addToBlacklist('','${escAttr(r.email||'')}','Budkonto')">Blacklista</button></td>
+    </tr>`;
   }).join('');
 }
 
-function openMiModal(itemId){
-  editingMiId=itemId||null;
-  document.getElementById('miModalTitle').textContent=itemId?'Redigera rätt':'Ny rätt';
-  document.getElementById('miDelBtn').style.display=itemId?'inline-block':'none';
-  const catSel=document.getElementById('miCat');catSel.innerHTML=(menuCats||['Övrigt']).map(c=>`<option value="${c}">${c}</option>`).join('');
-  document.querySelectorAll('.acb').forEach(l=>{l.classList.remove('checked');l.querySelector('input').checked=false});
-  document.getElementById('addonRows').innerHTML='';
-  ['miName','miDesc','miPrice','miEmoji'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=''});
-  if(itemId){
-    const item=menuItems.find(i=>String(i.id)===String(itemId));if(!item)return;
-    document.getElementById('miName').value=item.name||'';
-    document.getElementById('miDesc').value=item.description||'';
-    document.getElementById('miPrice').value=item.price||'';
-    document.getElementById('miEmoji').value=item.emoji||item.image_url||'';
-    catSel.value=item.category||menuCats[0]||'';
-    (item.allergens||[]).forEach(a=>document.querySelectorAll('.acb').forEach(l=>{if(l.querySelector('input').value===a){l.classList.add('checked');l.querySelector('input').checked=true}}));
-    (item.addons||[]).forEach(a=>addAddonRow(a.name,a.price));
+// ─── STATUS BADGE ────────────────────────────────────────────
+function statusBadge(st) {
+  const map = {new:'badge-new Ny',preparing:'badge-prep Tillagas',ready:'badge-ready Klar',picked:'badge-picked Hämtad',delivered:'badge-delivered Levererad'};
+  const parts = (map[st]||'badge-new Ny').split(' ');
+  return `<span class="badge ${parts[0]}">${parts.slice(1).join(' ')}</span>`;
+}
+
+// ─── CHARTS ──────────────────────────────────────────────────
+function buildDashCharts() {
+  const days = getLast7Days();
+  const revData = days.map(d => allOrders.filter(o=>o.created_at?.startsWith(d)&&o.status==='delivered').reduce((s,o)=>s+(o.total||0),0));
+  const ordData = days.map(d => allOrders.filter(o=>o.created_at?.startsWith(d)).length);
+  const labels = days.map(d => d.slice(5));
+  const cfg = (id, label, data, color) => {
+    const ctx = document.getElementById(id);
+    if (!ctx) return;
+    return new Chart(ctx, {
+      type: 'line',
+      data: { labels, datasets: [{ label, data, borderColor: color, backgroundColor: color+'22', tension: .4, fill: true, pointBackgroundColor: color }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { ticks: { color: '#8888AA', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#ffffff08' } },
+          y: { ticks: { color: '#8888AA', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#ffffff08' } } } }
+    });
+  };
+  if (revChart) revChart.destroy();
+  if (ordChart) ordChart.destroy();
+  revChart = cfg('rev-chart', 'Intäkt (kr)', revData, '#00D4FF');
+  ordChart = cfg('ord-chart', 'Ordrar', ordData, '#7B2FFF');
+}
+
+function getLast7Days() {
+  return Array.from({length:7}, (_,i) => {
+    const d = new Date(); d.setDate(d.getDate()-6+i);
+    return d.toISOString().slice(0,10);
+  });
+}
+
+function getLast30Days() {
+  return Array.from({length:30}, (_,i) => {
+    const d = new Date(); d.setDate(d.getDate()-29+i);
+    return d.toISOString().slice(0,10);
+  });
+}
+
+// ─── RIDERS MAP ──────────────────────────────────────────────
+function initRidersMap() {
+  if (ridersMap) return;
+  ridersMap = L.map('riders-map').setView([58.753, 17.007], 12);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(ridersMap);
+  updateRiderMarkers();
+}
+
+function updateRiderMarkers() {
+  if (!ridersMap) return;
+  allRiders.filter(r => r.lat && r.lng && r.online).forEach(r => {
+    const icon = L.divIcon({ html: '<div style="background:#00FF88;width:12px;height:12px;border-radius:50%;border:2px solid #000;box-shadow:0 0 10px #00FF88"></div>', className: '' });
+    if (riderMarkers[r.id]) {
+      riderMarkers[r.id].setLatLng([r.lat, r.lng]);
+    } else {
+      riderMarkers[r.id] = L.marker([r.lat, r.lng], { icon }).addTo(ridersMap).bindPopup(r.name || 'Bud');
+    }
+  });
+}
+
+// ─── ANALYTICS ───────────────────────────────────────────────
+async function loadAnalytics() {
+  document.getElementById('an-total').textContent = allOrders.length;
+  const totalRev = allOrders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(o.total||0),0);
+  document.getElementById('an-rev').textContent = totalRev.toFixed(0)+' kr';
+  const avg = allOrders.length ? (totalRev / allOrders.filter(o=>o.status==='delivered').length || 0) : 0;
+  document.getElementById('an-avg').textContent = avg.toFixed(0)+' kr';
+  document.getElementById('an-dist').textContent = '–';
+
+  // Top restaurants
+  const restCounts = {};
+  allOrders.forEach(o => {
+    if (!restCounts[o.restaurant_name]) restCounts[o.restaurant_name] = { count: 0, rev: 0 };
+    restCounts[o.restaurant_name].count++;
+    restCounts[o.restaurant_name].rev += o.subtotal || 0;
+  });
+  const tbody = document.getElementById('top-rest-body');
+  if (tbody) {
+    tbody.innerHTML = Object.entries(restCounts).sort((a,b)=>b[1].count-a[1].count).slice(0,10).map(([name,d]) =>
+      `<tr><td>${name}</td><td style="font-family:var(--mono)">${d.count}</td><td style="font-family:var(--mono)">${d.rev.toFixed(0)} kr</td></tr>`
+    ).join('');
   }
-  document.getElementById('miModal').classList.add('open');
-}
-function closeMiModal(){document.getElementById('miModal').classList.remove('open');editingMiId=null}
-function tgAcb(el){el.classList.toggle('checked');el.querySelector('input').checked=el.classList.contains('checked')}
-function addAddonRow(name='',price=''){
-  const row=document.createElement('div');row.className='addon-er';
-  row.innerHTML=`<input placeholder="Ex: Extra sås" value="${name}"><input class="ap" placeholder="+kr" type="number" value="${price}"><button class="btn-rm" onclick="this.parentElement.remove()">✕</button>`;
-  document.getElementById('addonRows').appendChild(row);
-}
-async function saveMenuItem(){
-  const name=document.getElementById('miName').value.trim(),desc=document.getElementById('miDesc').value.trim();
-  const price=parseFloat(document.getElementById('miPrice').value),emoji=document.getElementById('miEmoji').value.trim();
-  const cat=document.getElementById('miCat').value;
-  const allergens=[...document.querySelectorAll('.acb.checked')].map(l=>l.querySelector('input').value);
-  const addonEls=document.querySelectorAll('#addonRows .addon-er');
-  const addons=[...addonEls].map(r=>{const ins=r.querySelectorAll('input');return{name:ins[0].value.trim(),price:parseFloat(ins[1].value)||0}}).filter(a=>a.name);
-  if(!name||!price){notify('Namn och pris krävs');return}
-  const payload={name,description:desc,price,emoji:emoji||'🍽️',image_url:emoji||null,category:cat,allergens,addons,available:true,restaurant_id:curMenuRestId};
-  if(editingMiId){const {error}=await SB.from('menu_items').update(payload).eq('id',editingMiId);if(error){notify('Fel: '+error.message);return}}
-  else{const {error}=await SB.from('menu_items').insert(payload);if(error){notify('Fel: '+error.message);return}}
-  notify('✅ Rätt sparad');closeMiModal();loadMenuItems();
-}
-async function deleteMenuItem(){if(!confirm('Ta bort?'))return;await SB.from('menu_items').delete().eq('id',editingMiId);notify('🗑️ Borttagen');closeMiModal();loadMenuItems()}
-async function delMiById(id){if(!confirm('Ta bort?'))return;await SB.from('menu_items').delete().eq('id',id);loadMenuItems();notify('🗑️ Borttagen')}
 
-// CATEGORIES
-function openCatModal(){renderCatList();document.getElementById('catModal').classList.add('open')}
-function renderCatList(){
-  const el=document.getElementById('catListEl');
-  el.innerHTML=(menuCats||[]).map(c=>`<div class="cat-item-r"><span style="flex:1;font-size:13px">${c}</span><span style="font-family:var(--mono);font-size:10px;color:var(--text3)">${menuItems.filter(i=>i.category===c).length} rätter</span><button class="btn btn-ghost btn-sm" onclick="renameCat('${c}')">Byt</button><button class="btn btn-red btn-sm" onclick="deleteCat('${c}')">✕</button></div>`).join('')||'<div style="color:var(--text2);font-size:12px;font-family:var(--mono)">Inga kategorier</div>';
-}
-async function addCat(){const inp=document.getElementById('newCatInp');const name=inp.value.trim();if(!name)return;if(!menuCats.includes(name)){await SB.from('menu_categories').insert({restaurant_id:curMenuRestId,name,sort_order:menuCats.length});menuCats.push(name)}inp.value='';renderCatList();notify('✅ Kategori tillagd')}
-async function renameCat(old){const n=prompt('Nytt namn:',old);if(!n||n===old)return;await SB.from('menu_items').update({category:n}).eq('restaurant_id',curMenuRestId).eq('category',old);await SB.from('menu_categories').update({name:n}).eq('restaurant_id',curMenuRestId).eq('name',old);menuCats=menuCats.map(c=>c===old?n:c);await loadMenuItems();renderCatList();notify('✅ Omdöpt')}
-async function deleteCat(name){if(!confirm(`Ta bort "${name}"?`))return;await SB.from('menu_categories').delete().eq('restaurant_id',curMenuRestId).eq('name',name);menuCats=menuCats.filter(c=>c!==name);renderCatList();notify('🗑️ Borttagen')}
-
-function populateRestSelects(){
-  ['menu-rest-filter','new-rest-assign'].forEach(id=>{const sel=document.getElementById(id);if(!sel)return;sel.innerHTML='<option value="">Välj restaurang...</option>'+allRestaurants.map(r=>`<option value="${r.id}">${r.name}</option>`).join('')});
-}
-
-function exportCSV(){
-  const rows=[['ID','Kund','Restaurang','Total','Status','Datum'],...allOrders.map(o=>[o.id?.slice(0,8)||'',o.customer_name||'',o.restaurant_name||'',(o.total_amount||o.total||0).toFixed(0),o.status||o.created_at?.slice(0,10)||''  ])];
-  const csv=rows.map(r=>r.join(',')).join('\n');
-  const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='atlas-orders.csv';a.click();
-}
-function notify(msg){const el=document.getElementById('notif');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),3500)}
-
-// AUTO SESSION
-SB.auth.getSession().then(({data:{session}})=>{
-  if(session){
-    SB.from('profiles').select('role').eq('id',session.user.id).single().then(({data:prof})=>{
-      if(prof&&prof.role==='admin'){CU=session.user;document.getElementById('sbUser').textContent=session.user.email;document.getElementById('login-screen').style.display='none';init()}
+  // 30-day revenue chart
+  const days30 = getLast30Days();
+  const rev30 = days30.map(d => allOrders.filter(o=>o.created_at?.startsWith(d)&&o.status==='delivered').reduce((s,o)=>s+(o.total||0),0));
+  const ctx1 = document.getElementById('an-rev-chart');
+  if (ctx1) {
+    if (anRevChart) anRevChart.destroy();
+    anRevChart = new Chart(ctx1, {
+      type:'bar', data:{ labels:days30.map(d=>d.slice(5)), datasets:[{label:'Intäkt',data:rev30,backgroundColor:'#00D4FF44',borderColor:'#00D4FF',borderWidth:1}] },
+      options:{ responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8888AA',font:{family:'JetBrains Mono',size:9}},grid:{display:false}},y:{ticks:{color:'#8888AA',font:{family:'JetBrains Mono',size:9}},grid:{color:'#ffffff08'}}}}
     });
   }
-});
+
+  // Status pie
+  const statusCounts = {};
+  allOrders.forEach(o => { statusCounts[o.status] = (statusCounts[o.status]||0)+1; });
+  const ctx2 = document.getElementById('an-status-chart');
+  if (ctx2) {
+    if (anStatusChart) anStatusChart.destroy();
+    anStatusChart = new Chart(ctx2, {
+      type:'doughnut',
+      data:{ labels:Object.keys(statusCounts), datasets:[{data:Object.values(statusCounts),backgroundColor:['#FF8C00','#00D4FF','#7B2FFF','#00FF88','#444466'],borderWidth:0}] },
+      options:{ responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#E8E8F0',font:{family:'JetBrains Mono',size:10}}}} }
+    });
+  }
+}
+
+// ─── SETTINGS SAVE ───────────────────────────────────────────
+async function saveSettings() {
+  const base = document.getElementById('set-base').value;
+  const km = document.getElementById('set-km').value;
+  await SB.from('settings').upsert([{key:'delivery_base_fee',value:base},{key:'delivery_per_km',value:km}],{onConflict:'key'});
+  notify('✓ Inställningar sparade');
+}
+
+// ─── ACCOUNTS ────────────────────────────────────────────────
+async function loadAccounts() {
+  const { data } = await SB.from('profiles').select('*').order('created_at', { ascending: false });
+  const tbody = document.getElementById('accounts-body');
+  if (!tbody || !data) return;
+  tbody.innerHTML = data.map(p => `
+    <tr>
+      <td>${p.name||'–'}</td>
+      <td style="font-family:var(--mono);font-size:11px">${p.email||'–'}</td>
+      <td><span class="badge ${p.role==='admin'?'badge-picked':p.role==='restaurant'?'badge-prep':'badge-new'}">${p.role}</span></td>
+      <td style="font-family:var(--mono);font-size:10px">${p.created_at?p.created_at.slice(0,10):'–'}</td>
+    </tr>`).join('');
+}
+
+function updateAccountForm() {
+  const role = document.getElementById('new-role').value;
+  document.getElementById('rest-assign-group').style.display = role === 'restaurant' ? 'block' : 'none';
+}
+
+async function createAccount() {
+  const role = document.getElementById('new-role').value;
+  const name = document.getElementById('new-name').value.trim();
+  const email = document.getElementById('new-email').value.trim();
+  const pass = document.getElementById('new-pass').value;
+  const phone = document.getElementById('new-phone').value.trim();
+  const restId = document.getElementById('new-rest-assign').value;
+  const res = document.getElementById('create-result');
+  if (!name || !email || !pass) { res.style.color='var(--red)'; res.textContent='⚠ Fyll i alla obligatoriska fält.'; return; }
+
+  // Create via Supabase Auth admin API (needs service role - use Edge Function ideally)
+  // For now, use anon signUp and set profile
+  const { data, error } = await SB.auth.signUp({ email, password: pass, options: { data: { name } } });
+  if (error) { res.style.color='var(--red)'; res.textContent='Fel: '+error.message; return; }
+  if (data.user) {
+    await SB.from('profiles').upsert({ id: data.user.id, role, name, email, phone }, { onConflict: 'id' });
+    if (role === 'restaurant' && restId) {
+      await SB.from('restaurants').update({ owner_id: data.user.id }).eq('id', restId);
+    }
+    if (role === 'rider') {
+      await SB.from('riders').insert({ user_id: data.user.id, name, email, phone, online: false, deliveries: 0 });
+    }
+    res.style.color='var(--green)'; res.textContent='✓ Konto skapat: '+email;
+    loadAccounts();
+    notify('Konto skapat för '+name);
+    document.getElementById('new-name').value='';
+    document.getElementById('new-email').value='';
+    document.getElementById('new-pass').value='';
+    document.getElementById('new-phone').value='';
+  }
+}
+
+// ─── BLACKLIST ───────────────────────────────────────────────
+async function loadBlacklist() {
+  const { data } = await SB.from('blacklist').select('*').order('created_at', { ascending: false });
+  const tbody = document.getElementById('blacklist-body');
+  if (!tbody || !data) return;
+  tbody.innerHTML = data.length === 0 ? '<tr><td colspan="4" style="text-align:center;color:var(--text2)">Ingen blacklist ännu</td></tr>' :
+    data.map(b => `
+      <tr>
+        <td style="font-family:var(--mono)">${b.email||'–'}</td>
+        <td>${b.reason||'–'}</td>
+        <td style="font-family:var(--mono);font-size:10px">${b.created_at?.slice(0,10)||'–'}</td>
+        <td><button class="btn btn-ghost btn-sm" onclick="removeBlacklist('${b.id}')">Ta bort</button></td>
+      </tr>`).join('');
+}
+
+async function addToBlacklist(userId, email, reason) {
+  const r = reason || prompt('Anledning för blacklist:');
+  if (!r) return;
+  await SB.from('blacklist').insert({ user_id: userId||null, email, reason: r, created_by: currentUser?.id });
+  loadBlacklist();
+  notify('Blacklistad: '+email);
+}
+
+async function removeBlacklist(id) {
+  await SB.from('blacklist').delete().eq('id', id);
+  loadBlacklist();
+  notify('Borttagen från blacklist');
+}
+
+function openAddBlacklist() {
+  const email = prompt('E-post att blacklista:');
+  if (!email) return;
+  const reason = prompt('Anledning:');
+  if (!reason) return;
+  addToBlacklist('', email, reason);
+}
+
+// ─── CHAT ────────────────────────────────────────────────────
+async function openChat(orderId, orderNum) {
+  currentChatOrderId = orderId;
+  document.getElementById('chat-modal-title').textContent = 'Order #' + orderNum;
+  document.getElementById('chat-modal-msgs').innerHTML = '<div style="color:var(--text2);font-size:12px;text-align:center;padding:20px;font-family:var(--mono)">Laddar...</div>';
+  document.getElementById('chat-modal').classList.add('open');
+  await loadChatMsgs(orderId, 'chat-modal-msgs');
+  subscribeChat(orderId, 'chat-modal-msgs');
+}
+
+function closeChatModal() {
+  document.getElementById('chat-modal').classList.remove('open');
+  currentChatOrderId = null;
+}
+
+async function loadChatMsgs(orderId, containerId) {
+  const { data } = await SB.from('chats').select('*').eq('order_id', orderId).order('created_at');
+  renderChatMsgs(data || [], containerId);
+}
+
+function renderChatMsgs(msgs, containerId) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  if (msgs.length === 0) { el.innerHTML = '<div style="color:var(--text2);font-size:12px;text-align:center;padding:20px;font-family:var(--mono)">Inga meddelanden ännu.</div>'; return; }
+  el.innerHTML = msgs.map(m => `
+    <div class="msg ${m.sender_role==='admin'?'admin':'other'}">
+      <div class="msg-sender">${m.sender_name||m.sender_role} · ${new Date(m.created_at).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</div>
+      ${m.message}
+    </div>`).join('');
+  el.scrollTop = el.scrollHeight;
+}
+
+async function sendChatFromModal() {
+  if (!currentChatOrderId) return;
+  const inp = document.getElementById('chat-modal-inp');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+  await SB.from('chats').insert({ order_id: currentChatOrderId, sender_role: 'admin', sender_name: 'Admin', message: msg, sender_id: currentUser?.id });
+  await loadChatMsgs(currentChatOrderId, 'chat-modal-msgs');
+}
+
+async function sendAdminMsg() {
+  if (!currentConvOrderId) return;
+  const inp = document.getElementById('admin-msg-inp');
+  const msg = inp.value.trim();
+  if (!msg) return;
+  inp.value = '';
+  await SB.from('chats').insert({ order_id: currentConvOrderId, sender_role: 'admin', sender_name: 'Admin', message: msg, sender_id: currentUser?.id });
+  await loadChatMsgs(currentConvOrderId, 'conv-msgs');
+}
+
+function subscribeChat(orderId, containerId) {
+  SB.channel('chat-' + orderId)
+    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chats', filter: 'order_id=eq.' + orderId },
+      () => loadChatMsgs(orderId, containerId))
+    .subscribe();
+}
+
+// ─── CONVERSATIONS PAGE ──────────────────────────────────────
+async function loadConversations() {
+  const { data } = await SB.from('chats').select('order_id, message, sender_name, sender_role, created_at').order('created_at', { ascending: false });
+  if (!data) return;
+  // Group by order_id
+  const grouped = {};
+  data.forEach(m => {
+    if (!grouped[m.order_id]) grouped[m.order_id] = { order_id: m.order_id, last_message: m.message, last_sender: m.sender_name, last_time: m.created_at, count: 0 };
+    grouped[m.order_id].count++;
+  });
+  const el = document.getElementById('conv-list');
+  if (!el) return;
+  const entries = Object.values(grouped).slice(0, 20);
+  el.innerHTML = entries.length === 0 ? '<div style="color:var(--text2);font-size:12px;font-family:var(--mono)">Inga konversationer ännu.</div>' :
+    entries.map(g => `
+      <div class="chat-item" onclick="openConvDetail('${g.order_id}')">
+        <div class="chat-item-header">
+          <div class="chat-item-title">Order ${g.order_id?.slice(0,8)}</div>
+          <div class="chat-item-time">${new Date(g.last_time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+        <div class="chat-item-preview">${g.last_sender||'?'}: ${(g.last_message||'').slice(0,50)}...</div>
+      </div>`).join('');
+}
+
+async function openConvDetail(orderId) {
+  currentConvOrderId = orderId;
+  document.getElementById('conv-detail-title').textContent = 'Order ' + orderId.slice(0,8);
+  await loadChatMsgs(orderId, 'conv-msgs');
+  subscribeChat(orderId, 'conv-msgs');
+}
+
+function closeConvDetail() {
+  currentConvOrderId = null;
+  document.getElementById('conv-detail-title').textContent = 'Välj en konversation';
+  document.getElementById('conv-msgs').innerHTML = '';
+}
+
+// ─── MENU MANAGEMENT ─────────────────────────────────────────
+function populateMenuRestaurantFilter() {
+  const sel = document.getElementById('menu-rest-filter');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">Välj restaurang...</option>' +
+    allRestaurants.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
+}
+
+async function loadMenuItems() {
+  const restId = document.getElementById('menu-rest-filter').value;
+  const grid = document.getElementById('menu-grid');
+  if (!restId) { grid.innerHTML = '<div style="color:var(--text2);font-size:12px;font-family:var(--mono)">Välj en restaurang ovan.</div>'; return; }
+  const { data } = await SB.from('menu_items').select('*').eq('restaurant_id', restId).order('name');
+  grid.innerHTML = (data||[]).map(item => `
+    <div class="menu-card">
+      <div class="menu-card-name">${item.name}</div>
+      <div class="menu-card-meta">${item.category||'–'} · ${(item.price||0)} kr</div>
+      ${item.description ? `<div style="font-size:11px;color:var(--text2);margin-top:4px">${item.description}</div>` : ''}
+      ${item.allergens ? `<div style="font-size:10px;color:var(--orange);margin-top:3px;font-family:var(--mono)">⚠ ${item.allergens}</div>` : ''}
+      <div class="menu-card-actions">
+        <span class="badge ${item.available?'badge-online':'badge-offline'}">${item.available?'Tillgänglig':'Otillgänglig'}</span>
+        <button class="btn btn-ghost btn-sm" onclick="toggleMenuItem('${item.id}',${!item.available})">${item.available?'Inaktivera':'Aktivera'}</button>
+        <button class="btn btn-red btn-sm" onclick="deleteMenuItem('${item.id}')">✕</button>
+      </div>
+    </div>`).join('') || '<div style="color:var(--text2);font-size:12px;font-family:var(--mono)">Inga rätter hittades.</div>';
+}
+
+async function toggleMenuItem(id, available) {
+  await SB.from('menu_items').update({ available }).eq('id', id);
+  loadMenuItems();
+}
+
+async function deleteMenuItem(id) {
+  if (!confirm('Ta bort rätt?')) return;
+  await SB.from('menu_items').delete().eq('id', id);
+  loadMenuItems();
+  notify('Rätt borttagen');
+}
+
+function openAddMenuItem() {
+  const restId = document.getElementById('menu-rest-filter').value;
+  if (!restId) { notify('Välj en restaurang först'); return; }
+  const name = prompt('Namn på rätt:');
+  if (!name) return;
+  const price = prompt('Pris (kr):');
+  const cat = prompt('Kategori (t.ex. Förrätt, Huvudrätt):') || 'Main';
+  const desc = prompt('Beskrivning (valfritt):') || '';
+  const allergens = prompt('Allergener (valfritt):') || '';
+  SB.from('menu_items').insert({ restaurant_id: restId, name, price: parseFloat(price)||0, category: cat, description: desc, allergens, available: true }).then(() => { loadMenuItems(); notify('Rätt tillagd'); });
+}
+
+// ─── POPULATE SELECTS ────────────────────────────────────────
+function populateRestaurantSelects() {
+  const sel = document.getElementById('new-rest-assign');
+  if (sel) sel.innerHTML = '<option value="">Välj restaurang...</option>' + allRestaurants.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+}
+
+// ─── EXPORT CSV ──────────────────────────────────────────────
+function exportCSV() {
+  const headers = ['order_number','customer_name','customer_phone','customer_address','restaurant_name','rider_name','subtotal','delivery_fee','tip','total','status','created_at'];
+  const rows = allOrders.map(o => headers.map(h => JSON.stringify(o[h]||'')).join(','));
+  const csv = [headers.join(','), ...rows].join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'atlas-orders-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
+  notify('CSV exporterat');
+}
+
+// ─── REALTIME ────────────────────────────────────────────────
+function subscribeRealtime() {
+  SB.channel('admin-live')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => { loadOrders().then(() => { updateKPIs(); buildDashCharts(); }); })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'riders' }, () => { loadRiders().then(() => { updateRiderMarkers(); updateKPIs(); }); })
+    .subscribe();
+}
+
+// ─── HOLOGRAM POSITION ───────────────────────────────────────
+function setHoloPos(e) {
+  e.currentTarget.style.setProperty('--x', e.clientX + 'px');
+  e.currentTarget.style.setProperty('--y', e.clientY + 'px');
+}
+
+// ─── HELPERS ─────────────────────────────────────────────────
+function escHolo(str) { return str.replace(/"/g, '&quot;').replace(/'/g,'&#39;'); }
+function escAttr(str) { return (str||'').replace(/'/g,'&#39;'); }
+
+function notify(msg) {
+  const el = document.getElementById('notif');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// ─── AUTH CHECK ON LOAD ──────────────────────────────────────
+(async () => {
+  const { data } = await SB.auth.getSession();
+// ─── KUNDER ──────────────────────────────────────────────
+let allCustomers = [];
+
+async function loadCustomers() {
+  document.getElementById('customers-body').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text2);font-family:var(--mono)">Laddar...</td></tr>';
+
+  // Get all delivered/picked orders with customer info
+  const { data: orders } = await SB.from('orders')
+    .select('customer_name,customer_phone,customer_address,delivery_address,total,subtotal,created_at,status')
+    .order('created_at', { ascending: false });
+
+  if (!orders) { document.getElementById('customers-body').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text2)">Ingen data</td></tr>'; return; }
+
+  // Aggregate by phone (best unique key we have without auth user link)
+  const map = {};
+  orders.forEach(o => {
+    const key = (o.customer_phone || '').trim() || (o.customer_name || '').trim().toLowerCase();
+    if (!key) return;
+    if (!map[key]) {
+      map[key] = {
+        name: o.customer_name || '–',
+        phone: o.customer_phone || '–',
+        address: o.customer_address || o.delivery_address || '–',
+        orders: 0,
+        spent: 0,
+        lastOrder: o.created_at
+      };
+    }
+    map[key].orders++;
+    map[key].spent += (o.total || 0);
+    if (o.created_at > map[key].lastOrder) {
+      map[key].lastOrder = o.created_at;
+      map[key].address = o.customer_address || o.delivery_address || map[key].address;
+    }
+  });
+
+  allCustomers = Object.values(map).sort((a, b) => b.orders - a.orders);
+  document.getElementById('cust-count').textContent = allCustomers.length + ' kunder';
+  renderCustomersTable(allCustomers);
+}
+
+function filterCustomers() {
+  const q = (document.getElementById('cust-search')?.value || '').toLowerCase();
+  const filtered = q ? allCustomers.filter(c =>
+    c.name.toLowerCase().includes(q) ||
+    c.phone.toLowerCase().includes(q) ||
+    c.address.toLowerCase().includes(q)
+  ) : allCustomers;
+  document.getElementById('cust-count').textContent = filtered.length + ' kunder';
+  renderCustomersTable(filtered);
+}
+
+function renderCustomersTable(list) {
+  const tbody = document.getElementById('customers-body');
+  if (!list.length) {
+    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text2);font-family:var(--mono)">Inga kunder hittades</td></tr>';
+    return;
+  }
+  tbody.innerHTML = list.map(c => {
+    const ts = c.lastOrder ? new Date(c.lastOrder).toLocaleDateString('sv-SE') : '–';
+    const isBlacklisted = allOrders?.some ? false : false; // placeholder
+    return `<tr>
+      <td style="font-weight:600">${escAttr(c.name)}</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text2)">–</td>
+      <td style="font-family:var(--mono);font-size:11px">${escAttr(c.phone)}</td>
+      <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(c.address)}">${escAttr(c.address)}</td>
+      <td style="font-family:var(--mono);text-align:center"><span style="background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);border-radius:6px;padding:2px 8px;color:var(--cyan);font-size:11px">${c.orders}</span></td>
+      <td style="font-family:var(--mono);color:var(--green)">${c.spent.toFixed(0)} kr</td>
+      <td style="font-family:var(--mono);font-size:11px;color:var(--text2)">${ts}</td>
+      <td>
+        <button class="btn btn-red btn-sm" onclick="addToBlacklist('','${escAttr(c.phone)}','Kund')">🚫 Blacklista</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+  if (data.session) {
+    const { data: prof } = await SB.from('profiles').select('role').eq('id', data.session.user.id).single();
+    if (prof?.role === 'admin') {
+      currentUser = data.session.user;
+      document.getElementById('sidebar-user').textContent = data.session.user.email;
+      document.getElementById('login-screen').style.display = 'none';
+      init();
+    }
+  }
+})();
 </script>
 </body>
 </html>
