@@ -1,1283 +1,978 @@
 <!DOCTYPE html>
 <html lang="sv">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Atlas Delivery — Admin</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"/>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet"/>
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@300;400;500;600&family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+// ── CURSOR
+const _cur=document.getElementById('cursor');const _cdot=document.getElementById('cursor-dot');
+if(_cur){document.addEventListener('mousemove',e=>{_cur.style.left=e.clientX+'px';_cur.style.top=e.clientY+'px';_cdot.style.left=e.clientX+'px';_cdot.style.top=e.clientY+'px';});document.addEventListener('mouseover',e=>{if(e.target.closest('button,a,input,[onclick],.nav-btn,.kpi'))_cur.classList.add('hover');else _cur.classList.remove('hover');});}
+</script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
-:root{
-  --bg:#0A0A0F;--bg2:#0F0F1A;--bg3:#141428;
-  --cyan:#00D4FF;--violet:#7B2FFF;--green:#00FF88;--red:#FF4560;--orange:#FF8C00;
-  --text:#E8E8F0;--text2:#8888AA;--text3:#4444666;
-  --border:rgba(0,212,255,.13);--border2:rgba(123,47,255,.18);
-  --glow-c:0 0 20px rgba(0,212,255,.3);--glow-v:0 0 20px rgba(123,47,255,.3);
-  --font:'Syne',sans-serif;--mono:'JetBrains Mono',monospace;
-  --radius:12px;--radius-sm:8px;
+:root {
+  --bg:#04040C;--bg1:#070712;--bg2:#0A0A18;--bg3:#0E0E20;
+  --glass:rgba(10,10,28,0.72);--glass2:rgba(14,14,32,0.88);
+  --c:#00E5FF;--v:#7C3AED;--g:#00FF88;--o:#FF6B35;--r:#FF2D55;--y:#FFD60A;
+  --w:#F0F0FF;--t2:#8080A8;--t3:#40405A;
+  --border:rgba(0,229,255,0.14);
+  --glow:0 0 20px rgba(0,229,255,0.15),0 0 60px rgba(0,229,255,0.05);
+  --glow-v:0 0 20px rgba(124,58,237,0.2),0 0 60px rgba(124,58,237,0.06);
+  --fd:'Rajdhani',sans-serif;--fm:'IBM Plex Mono',monospace;--fo:'Orbitron',sans-serif;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;display:flex;overflow:hidden}
-
-/* SIDEBAR */
-#sidebar{width:220px;min-height:100vh;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;padding:24px 0;flex-shrink:0;z-index:10}
-.logo{padding:0 20px 24px;border-bottom:1px solid var(--border)}
-.logo .brand{font-size:11px;color:var(--text2);letter-spacing:3px;font-family:var(--mono)}
-.logo .name{font-size:18px;font-weight:800;background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.logo .sub{font-size:10px;color:var(--text2);letter-spacing:2px;font-family:var(--mono)}
-nav{flex:1;padding:16px 0}
-nav button{width:100%;display:flex;align-items:center;gap:10px;padding:11px 20px;background:none;border:none;color:var(--text2);font-family:var(--font);font-size:13px;font-weight:600;letter-spacing:.5px;cursor:pointer;transition:all .2s;position:relative}
-nav button:hover{color:var(--text);background:rgba(0,212,255,.05)}
-nav button.active{color:var(--cyan);background:rgba(0,212,255,.08)}
-nav button.active::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--cyan);border-radius:0 3px 3px 0}
-nav button .icon{font-size:16px;width:20px;text-align:center}
-.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border)}
-.sidebar-footer .user-info{font-size:11px;color:var(--text2);font-family:var(--mono)}
-
-/* MAIN */
-#main{flex:1;overflow-y:auto;background:var(--bg)}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:20px 32px;border-bottom:1px solid var(--border);background:var(--bg2);position:sticky;top:0;z-index:5}
-.topbar h1{font-size:20px;font-weight:800;letter-spacing:-.5px}
-.topbar .live{display:flex;align-items:center;gap:8px;font-size:11px;color:var(--green);font-family:var(--mono);letter-spacing:1px}
-.topbar .live::before{content:'';width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-.page{padding:28px 32px;display:none}
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+html{cursor:none}
+body{background:var(--bg);color:var(--w);font-family:var(--fd);min-height:100vh;display:flex;overflow-x:hidden}
+#cursor{position:fixed;width:16px;height:16px;pointer-events:none;z-index:99999;border:1.5px solid var(--c);border-radius:50%;transform:translate(-50%,-50%);transition:width .15s,height .15s,background .15s;mix-blend-mode:screen}
+#cursor.hover{width:28px;height:28px;background:rgba(0,229,255,.08)}
+#cursor-dot{position:fixed;width:4px;height:4px;background:var(--c);border-radius:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:99999;box-shadow:0 0 6px var(--c)}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");opacity:.025}
+body::after{content:'';position:fixed;inset:0;pointer-events:none;z-index:1;background:repeating-linear-gradient(0deg,transparent 0px,transparent 2px,rgba(0,0,0,.04) 2px,rgba(0,0,0,.04) 4px)}
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0;animation:orbFloat 8s ease-in-out infinite;filter:blur(80px)}
+.orb1{width:500px;height:500px;background:radial-gradient(circle,rgba(0,229,255,.06),transparent 70%);top:-100px;left:-100px}
+.orb2{width:400px;height:400px;background:radial-gradient(circle,rgba(124,58,237,.06),transparent 70%);bottom:-80px;right:-80px;animation-delay:-4s}
+.orb3{width:300px;height:300px;background:radial-gradient(circle,rgba(0,255,136,.04),transparent 70%);top:40%;left:40%;animation-delay:-2s}
+@keyframes orbFloat{0%,100%{transform:translate(0,0) scale(1)}33%{transform:translate(30px,-20px) scale(1.05)}66%{transform:translate(-20px,30px) scale(.97)}}
+#loginScreen{position:fixed;inset:0;z-index:900;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.login-terminal{width:440px;background:var(--glass2);backdrop-filter:blur(32px);border:1px solid var(--border);border-radius:4px;overflow:hidden;box-shadow:var(--glow),0 40px 80px rgba(0,0,0,.6);animation:loginAppear .6s cubic-bezier(.34,1.56,.64,1)}
+@keyframes loginAppear{from{opacity:0;transform:translateY(24px) scale(.97)}to{opacity:1;transform:none}}
+.terminal-bar{background:rgba(0,229,255,.06);border-bottom:1px solid var(--border);padding:10px 16px;display:flex;align-items:center;gap:8px}
+.t-dot{width:10px;height:10px;border-radius:50%}
+.t-r{background:#FF3B5C;box-shadow:0 0 6px #FF3B5C}.t-y{background:#FFD60A;box-shadow:0 0 6px #FFD60A}.t-g{background:#00FF88;box-shadow:0 0 6px #00FF88}
+.terminal-title{font-family:var(--fm);font-size:10px;color:var(--t2);letter-spacing:2px;margin-left:auto}
+.login-inner{padding:32px 36px 36px}
+.login-sys{font-family:var(--fm);font-size:10px;color:var(--c);letter-spacing:3px;text-transform:uppercase;margin-bottom:20px;opacity:.7}
+.login-brand{font-family:var(--fo);font-size:28px;font-weight:700;background:linear-gradient(90deg,var(--c),#B06EFF);-webkit-background-clip:text;-webkit-text-fill-color:transparent;letter-spacing:3px;margin-bottom:4px}
+.login-sub{font-family:var(--fm);font-size:11px;color:var(--t2);letter-spacing:2px;margin-bottom:28px}
+.f-group{margin-bottom:18px}
+.f-label{display:block;font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--c);text-transform:uppercase;margin-bottom:8px;opacity:.8}
+.f-wrap{position:relative}
+.f-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:14px;opacity:.5;pointer-events:none;z-index:1}
+.f-input{width:100%;padding:12px 14px 12px 38px;background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.2);border-radius:3px;color:var(--w);font-family:var(--fm);font-size:13px;outline:none;transition:.2s}
+.f-input:focus{border-color:var(--c);background:rgba(0,229,255,.07);box-shadow:0 0 0 3px rgba(0,229,255,.08)}
+.f-input::placeholder{color:var(--t3)}
+.btn-login{width:100%;padding:14px;background:linear-gradient(135deg,rgba(0,229,255,.12),rgba(124,58,237,.12));border:1px solid var(--border);border-radius:3px;color:var(--c);font-family:var(--fo);font-size:12px;font-weight:500;letter-spacing:3px;cursor:pointer;transition:.2s;position:relative;overflow:hidden;margin-top:8px}
+.btn-login:hover{border-color:var(--c);box-shadow:var(--glow);color:var(--w)}
+.login-err{margin-top:14px;padding:10px 14px;background:rgba(255,45,85,.08);border:1px solid rgba(255,45,85,.3);border-radius:3px;color:var(--r);font-family:var(--fm);font-size:11px;text-align:center;display:none;animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+#appShell{display:none;flex-direction:row;width:100%;min-height:100vh;position:relative;z-index:2}
+.sidebar{width:248px;min-height:100vh;background:var(--glass);backdrop-filter:blur(24px);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100}
+.sidebar::before{content:'';position:absolute;right:-1px;top:0;bottom:0;width:1px;background:linear-gradient(180deg,transparent,var(--c) 30%,var(--v) 70%,transparent);animation:borderFlow 4s ease-in-out infinite}
+@keyframes borderFlow{0%,100%{opacity:.3}50%{opacity:1}}
+.sb-head{padding:24px 20px 18px;border-bottom:1px solid rgba(255,255,255,.04)}
+.sb-sys{font-family:var(--fm);font-size:9px;color:var(--c);letter-spacing:3px;text-transform:uppercase;opacity:.6;margin-bottom:4px}
+.sb-name{font-family:var(--fo);font-size:16px;font-weight:700;letter-spacing:2px;color:var(--w)}
+.sb-name .dot{color:var(--c)}
+.sb-badge{display:inline-block;margin-top:8px;padding:3px 10px;background:rgba(124,58,237,.15);border:1px solid rgba(124,58,237,.35);border-radius:2px;font-family:var(--fm);font-size:9px;color:#B06EFF;letter-spacing:2px}
+.sb-nav{flex:1;padding:14px 12px;overflow-y:auto}
+.nav-btn{display:flex;align-items:center;gap:11px;width:100%;padding:10px 12px;border-radius:3px;cursor:pointer;color:var(--t2);font-family:var(--fd);font-size:14px;font-weight:500;letter-spacing:.5px;transition:.2s;margin-bottom:1px;background:none;border:none;text-align:left;position:relative;overflow:hidden}
+.nav-btn::before{content:'';position:absolute;left:0;top:0;bottom:0;width:0;background:linear-gradient(90deg,rgba(0,229,255,.08),transparent);transition:.2s}
+.nav-btn:hover::before{width:100%}
+.nav-btn:hover{color:var(--w)}
+.nav-btn.active{color:var(--c);background:rgba(0,229,255,.07);border:1px solid rgba(0,229,255,.15)}
+.nav-btn.active::after{content:'';position:absolute;left:0;top:0;bottom:0;width:2px;background:var(--c);box-shadow:0 0 8px var(--c)}
+.nav-icon{font-size:16px;width:20px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;background:var(--r);color:#fff;font-family:var(--fm);font-size:9px;font-weight:600;padding:2px 6px;border-radius:2px;box-shadow:0 0 8px rgba(255,45,85,.4);animation:pulseBadge 1.5s ease infinite}
+@keyframes pulseBadge{0%,100%{box-shadow:0 0 8px rgba(255,45,85,.4)}50%{box-shadow:0 0 16px rgba(255,45,85,.7)}}
+.sb-foot{padding:14px 12px;border-top:1px solid rgba(255,255,255,.04)}
+.btn-logout{width:100%;padding:9px;background:transparent;border:1px solid rgba(255,45,85,.25);border-radius:3px;color:var(--t2);font-family:var(--fd);font-size:13px;font-weight:500;cursor:pointer;transition:.2s;letter-spacing:.5px}
+.btn-logout:hover{border-color:var(--r);color:var(--r);background:rgba(255,45,85,.06)}
+.main{margin-left:248px;flex:1;min-height:100vh;display:flex;flex-direction:column}
+.topbar{padding:0 28px;height:58px;background:var(--glass);backdrop-filter:blur(24px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.tb-title{font-family:var(--fo);font-size:15px;font-weight:500;letter-spacing:2px;color:var(--w)}
+.tb-right{display:flex;align-items:center;gap:12px}
+.live-chip{display:flex;align-items:center;gap:7px;padding:5px 14px;background:rgba(0,255,136,.06);border:1px solid rgba(0,255,136,.2);border-radius:2px;font-family:var(--fm);font-size:10px;color:var(--g);letter-spacing:2px}
+.live-dot{width:6px;height:6px;border-radius:50%;background:var(--g);box-shadow:0 0 8px var(--g);animation:livePulse 1.5s ease infinite}
+@keyframes livePulse{0%,100%{opacity:1;box-shadow:0 0 8px var(--g)}50%{opacity:.5;box-shadow:0 0 3px var(--g)}}
+.btn-csv{padding:6px 14px;background:transparent;border:1px solid var(--border);border-radius:3px;color:var(--t2);font-family:var(--fm);font-size:10px;letter-spacing:1px;cursor:pointer;transition:.2s}
+.btn-csv:hover{border-color:var(--c);color:var(--c)}
+.content{padding:24px 28px;flex:1}
+.page{display:none;animation:pageIn .3s ease}
 .page.active{display:block}
-
-/* CARDS */
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
-.kpi{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px;position:relative;overflow:hidden;transition:all .3s}
-.kpi:hover{border-color:var(--cyan);box-shadow:var(--glow-c)}
-.kpi::after{content:'';position:absolute;top:0;right:0;width:80px;height:80px;border-radius:50%;filter:blur(30px);opacity:.15}
-.kpi.cyan::after{background:var(--cyan)}
-.kpi.violet::after{background:var(--violet)}
-.kpi.green::after{background:var(--green)}
-.kpi.orange::after{background:var(--orange)}
-.kpi-label{font-size:10px;color:var(--text2);letter-spacing:2px;font-family:var(--mono);text-transform:uppercase;margin-bottom:8px}
-.kpi-val{font-size:28px;font-weight:800;font-family:var(--mono)}
-.kpi.cyan .kpi-val{color:var(--cyan)}
-.kpi.violet .kpi-val{color:var(--violet)}
-.kpi.green .kpi-val{color:var(--green)}
-.kpi.orange .kpi-val{color:var(--orange)}
-.kpi-sub{font-size:11px;color:var(--text2);margin-top:4px}
-
-/* GRID LAYOUT */
-.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
-.grid-3{display:grid;grid-template-columns:2fr 1fr;gap:20px;margin-bottom:20px}
-
-/* PANEL */
-.panel{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
-.panel-header{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--border)}
-.panel-title{font-size:13px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--cyan);font-family:var(--mono)}
+@keyframes pageIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.kpi{background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:4px;padding:20px 18px;position:relative;overflow:hidden;transition:.3s;cursor:default}
+.kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--c),transparent);opacity:.5}
+.kpi:hover{border-color:rgba(0,229,255,.3);box-shadow:var(--glow);transform:translateY(-2px)}
+.kpi::after{content:'';position:absolute;top:-30px;right:-30px;width:100px;height:100px;border-radius:50%;filter:blur(40px);opacity:.15}
+.kpi-c::after{background:var(--c)}.kpi-g::after{background:var(--g)}.kpi-v::after{background:var(--v)}.kpi-o::after{background:var(--o)}
+.kpi-label{font-family:var(--fm);font-size:9px;letter-spacing:3px;color:var(--t2);text-transform:uppercase;margin-bottom:10px}
+.kpi-val{font-family:var(--fo);font-size:26px;font-weight:700}
+.kpi-c .kpi-val{color:var(--c);text-shadow:0 0 20px rgba(0,229,255,.3)}.kpi-g .kpi-val{color:var(--g);text-shadow:0 0 20px rgba(0,255,136,.3)}.kpi-v .kpi-val{color:#B06EFF;text-shadow:0 0 20px rgba(124,58,237,.3)}.kpi-o .kpi-val{color:var(--o);text-shadow:0 0 20px rgba(255,107,53,.3)}
+.kpi-sub{font-family:var(--fm);font-size:10px;color:var(--t3);margin-top:5px}
+.panel{background:var(--glass);backdrop-filter:blur(16px);border:1px solid var(--border);border-radius:4px;overflow:hidden;margin-bottom:20px;position:relative}
+.panel::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--c),transparent);opacity:.3}
+.panel-head{padding:14px 20px;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;justify-content:space-between}
+.panel-title{font-family:var(--fm);font-size:10px;letter-spacing:3px;color:var(--c);text-transform:uppercase}
 .panel-body{padding:16px 20px}
-
-/* TABLE */
-.data-table{width:100%;border-collapse:collapse;font-size:12px}
-.data-table th{padding:8px 12px;text-align:left;color:var(--text2);font-family:var(--mono);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;border-bottom:1px solid var(--border);font-weight:500}
-.data-table td{padding:10px 12px;border-bottom:1px solid rgba(255,255,255,.04);color:var(--text);transition:background .15s;position:relative}
-.data-table tr:hover td{background:rgba(0,212,255,.04)}
-.data-table tr:last-child td{border-bottom:none}
-
-/* HOLOGRAM TOOLTIP */
-.holo-trigger{cursor:pointer}
-.holo-trigger:hover::after{content:attr(data-holo);position:fixed;z-index:9999;background:linear-gradient(135deg,rgba(10,10,30,.98),rgba(15,15,40,.98));border:1px solid var(--cyan);border-radius:var(--radius);padding:16px 18px;font-size:11px;font-family:var(--mono);color:var(--text);white-space:pre;line-height:1.8;box-shadow:0 0 30px rgba(0,212,255,.25),inset 0 0 30px rgba(0,212,255,.03);max-width:320px;pointer-events:none;transform:translate(12px,-50%);top:var(--y,50%);left:var(--x,50%)}
-
-/* STATUS BADGES */
-.badge{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:10px;font-family:var(--mono);font-weight:700;letter-spacing:.5px;text-transform:uppercase}
-.badge::before{content:'';width:5px;height:5px;border-radius:50%}
-.badge-new{background:rgba(255,140,0,.15);color:var(--orange);border:1px solid rgba(255,140,0,.3)}.badge-new::before{background:var(--orange)}
-.badge-prep{background:rgba(0,212,255,.15);color:var(--cyan);border:1px solid rgba(0,212,255,.3)}.badge-prep::before{background:var(--cyan)}
-.badge-ready{background:rgba(123,47,255,.15);color:#AA88FF;border:1px solid rgba(123,47,255,.3)}.badge-ready::before{background:#AA88FF}
-.badge-picked{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3)}.badge-picked::before{background:var(--green)}
-.badge-delivered{background:rgba(255,255,255,.08);color:var(--text2);border:1px solid rgba(255,255,255,.1)}.badge-delivered::before{background:var(--text2)}
-.badge-online{background:rgba(0,255,136,.15);color:var(--green);border:1px solid rgba(0,255,136,.3)}.badge-online::before{background:var(--green)}
-.badge-offline{background:rgba(255,255,255,.08);color:var(--text2);border:1px solid rgba(255,255,255,.1)}.badge-offline::before{background:var(--text2)}
-
-/* BUTTONS */
-.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:var(--radius-sm);font-family:var(--font);font-size:12px;font-weight:700;letter-spacing:.5px;cursor:pointer;transition:all .2s;border:none}
-.btn-cyan{background:linear-gradient(135deg,var(--cyan),#0099BB);color:#000}
-.btn-cyan:hover{box-shadow:var(--glow-c);transform:translateY(-1px)}
-.btn-violet{background:linear-gradient(135deg,var(--violet),#5511CC);color:#fff}
-.btn-violet:hover{box-shadow:var(--glow-v);transform:translateY(-1px)}
-.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text2)}
-.btn-ghost:hover{border-color:var(--cyan);color:var(--cyan)}
-.btn-red{background:rgba(255,69,96,.15);border:1px solid rgba(255,69,96,.3);color:var(--red)}
-.btn-red:hover{background:rgba(255,69,96,.3)}
-.btn-sm{padding:5px 12px;font-size:11px}
-
-/* FORM INPUTS */
-.inp{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;color:var(--text);font-family:var(--mono);font-size:12px;width:100%;outline:none;transition:border .2s}
-.inp:focus{border-color:var(--cyan);box-shadow:0 0 0 3px rgba(0,212,255,.08)}
-.inp::placeholder{color:var(--text2)}
-.lbl{font-size:10px;color:var(--text2);letter-spacing:1.5px;font-family:var(--mono);text-transform:uppercase;margin-bottom:6px;display:block}
-.form-group{margin-bottom:14px}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
-
-/* MAP */
-#riders-map{height:340px;border-radius:var(--radius-sm);filter:hue-rotate(180deg) invert(1)}
-
-/* CHART */
-.chart-wrap{position:relative;height:200px}
-
-/* CHAT PANEL */
-.chat-list{display:flex;flex-direction:column;gap:8px;max-height:400px;overflow-y:auto;padding-right:4px}
-.chat-item{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;cursor:pointer;transition:all .2s}
-.chat-item:hover{border-color:var(--cyan);background:rgba(0,212,255,.04)}
-.chat-item-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.chat-item-title{font-size:12px;font-weight:700;color:var(--cyan)}
-.chat-item-time{font-size:10px;color:var(--text2);font-family:var(--mono)}
-.chat-item-preview{font-size:11px;color:var(--text2)}
-
-/* CHAT MODAL */
-.chat-modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:100;align-items:center;justify-content:center}
-.chat-modal.open{display:flex}
-.chat-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);width:500px;max-height:600px;display:flex;flex-direction:column;box-shadow:var(--glow-c)}
-.chat-box-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
-.chat-box-title{font-size:13px;font-weight:700;color:var(--cyan);font-family:var(--mono)}
-.chat-msgs{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px;max-height:380px}
-.msg{max-width:80%;padding:8px 12px;border-radius:10px;font-size:12px;line-height:1.5}
-.msg.admin{background:rgba(123,47,255,.2);border:1px solid rgba(123,47,255,.3);align-self:flex-end;color:var(--text)}
-.msg.other{background:var(--bg3);border:1px solid var(--border);align-self:flex-start;color:var(--text)}
-.msg-sender{font-size:9px;color:var(--text2);font-family:var(--mono);margin-bottom:3px;letter-spacing:1px;text-transform:uppercase}
-.chat-input-row{padding:12px 16px;border-top:1px solid var(--border);display:flex;gap:8px}
-.chat-input-row .inp{flex:1}
-
-/* SETTINGS */
-.settings-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.settings-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
-.settings-title{font-size:12px;font-weight:700;color:var(--cyan);letter-spacing:1.5px;font-family:var(--mono);text-transform:uppercase;margin-bottom:16px}
-
-/* LOGIN */
-#login-screen{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:200;flex-direction:column}
-.login-box{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:40px;width:380px;box-shadow:var(--glow-v)}
-.login-logo{text-align:center;margin-bottom:28px}
-.login-logo .l1{font-size:10px;color:var(--text2);letter-spacing:3px;font-family:var(--mono)}
-.login-logo .l2{font-size:24px;font-weight:800;background:linear-gradient(90deg,var(--cyan),var(--violet));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
-.login-logo .l3{font-size:11px;color:var(--text2);letter-spacing:2px;font-family:var(--mono)}
-.login-err{background:rgba(255,69,96,.1);border:1px solid rgba(255,69,96,.3);color:var(--red);padding:10px 14px;border-radius:var(--radius-sm);font-size:12px;font-family:var(--mono);margin-bottom:14px;display:none}
-.login-form-title{font-size:11px;color:var(--text2);font-family:var(--mono);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:20px;text-align:center}
-
-/* SCROLLBAR */
-::-webkit-scrollbar{width:4px;height:4px}
-::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--border2);border-radius:4px}
-
-/* MENU MANAGEMENT */
-.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px}
-.menu-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;transition:all .2s}
-.menu-card:hover{border-color:var(--cyan)}
-.menu-card-name{font-size:13px;font-weight:700;margin-bottom:4px}
-.menu-card-meta{font-size:11px;color:var(--text2);font-family:var(--mono)}
-.menu-card-actions{display:flex;gap:6px;margin-top:10px}
-
-/* CREATE ACCOUNT FORM */
-.create-account-wrap{max-width:560px}
-
-/* BLACKLIST */
-.blacklist-table-wrap{overflow-x:auto}
-
-/* SCROLLABLE PANEL BODY */
-.panel-body-scroll{padding:0;max-height:340px;overflow-y:auto}
-.panel-body-scroll .data-table{margin:0}
-
-/* SECTION TITLE */
-.section-title{font-size:11px;color:var(--text2);letter-spacing:2px;font-family:var(--mono);text-transform:uppercase;margin-bottom:16px;padding-bottom:8px;border-bottom:1px solid var(--border)}
-
-/* NOTIFICATION */
-.notif{position:fixed;bottom:24px;right:24px;background:var(--bg2);border:1px solid var(--cyan);border-radius:var(--radius-sm);padding:12px 18px;font-family:var(--mono);font-size:12px;color:var(--cyan);box-shadow:var(--glow-c);transform:translateY(80px);opacity:0;transition:all .4s;z-index:9999;max-width:340px}
-.notif.show{transform:translateY(0);opacity:1}
+.tbl-toolbar{padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.04);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px}
+.tbl-search{padding:8px 14px;background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.15);border-radius:3px;color:var(--w);font-family:var(--fm);font-size:11px;outline:none;width:200px;transition:.2s}
+.tbl-search:focus{border-color:var(--c);background:rgba(0,229,255,.07)}
+.tbl-search::placeholder{color:var(--t3)}
+.btn-new{padding:8px 18px;border-radius:3px;font-family:var(--fm);font-size:10px;letter-spacing:2px;cursor:pointer;white-space:nowrap;transition:.2s;background:linear-gradient(135deg,rgba(0,229,255,.1),rgba(124,58,237,.1));border:1px solid var(--border);color:var(--c)}
+.btn-new:hover{border-color:var(--c);box-shadow:var(--glow);color:var(--w)}
+table{width:100%;border-collapse:separate;border-spacing:0}
+th{padding:10px 16px;text-align:left;font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--t3);text-transform:uppercase;border-bottom:1px solid rgba(255,255,255,.04)}
+td{padding:12px 16px;font-size:13px;font-family:var(--fd);color:var(--t2);border-bottom:1px solid rgba(255,255,255,.025)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(0,229,255,.025);color:var(--w)}
+.td-name{color:var(--w);font-weight:600;font-size:14px}
+.td-mono{font-family:var(--fm);color:var(--c);font-size:11px}
+.pill{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:2px;font-family:var(--fm);font-size:9px;font-weight:600;letter-spacing:1px}
+.pill::before{content:'';width:5px;height:5px;border-radius:50%}
+.pill-on{background:rgba(0,255,136,.08);color:var(--g);border:1px solid rgba(0,255,136,.2)}.pill-on::before{background:var(--g);box-shadow:0 0 6px var(--g)}
+.pill-off{background:rgba(64,64,90,.2);color:var(--t2);border:1px solid rgba(64,64,90,.3)}.pill-off::before{background:var(--t3)}
+.pill-red{background:rgba(255,45,85,.08);color:var(--r);border:1px solid rgba(255,45,85,.2)}.pill-red::before{background:var(--r);box-shadow:0 0 6px var(--r)}
+.pill-orange{background:rgba(255,107,53,.08);color:var(--o);border:1px solid rgba(255,107,53,.2)}.pill-orange::before{background:var(--o)}
+.pill-violet{background:rgba(124,58,237,.1);color:#B06EFF;border:1px solid rgba(124,58,237,.2)}.pill-violet::before{background:#B06EFF}
+.pill-cyan{background:rgba(0,229,255,.08);color:var(--c);border:1px solid rgba(0,229,255,.2)}.pill-cyan::before{background:var(--c);box-shadow:0 0 6px var(--c)}
+.act-btns{display:flex;gap:5px}
+.btn-edit{padding:4px 11px;border-radius:2px;font-family:var(--fm);font-size:10px;cursor:pointer;transition:.2s;letter-spacing:.5px;background:rgba(0,229,255,.06);border:1px solid rgba(0,229,255,.2);color:var(--c)}
+.btn-edit:hover{background:var(--c);color:#000}
+.btn-del{padding:4px 11px;border-radius:2px;font-family:var(--fm);font-size:10px;cursor:pointer;transition:.2s;background:rgba(255,45,85,.06);border:1px solid rgba(255,45,85,.2);color:var(--r)}
+.btn-del:hover{background:var(--r);color:#fff}
+.btn-bl{padding:4px 11px;border-radius:2px;font-family:var(--fm);font-size:10px;cursor:pointer;transition:.2s;background:rgba(255,107,53,.06);border:1px solid rgba(255,107,53,.2);color:var(--o)}
+.btn-bl:hover{background:var(--o);color:#000}
+.holo-row{position:relative}
+.holo-row:hover .holo-box{display:block}
+.holo-box{display:none;position:absolute;left:calc(100% + 12px);top:50%;transform:translateY(-50%);width:270px;z-index:999;background:rgba(4,4,16,.96);backdrop-filter:blur(20px);border:1px solid var(--c);border-radius:4px;padding:16px;box-shadow:0 0 40px rgba(0,229,255,.15),inset 0 0 20px rgba(0,229,255,.02);pointer-events:none;animation:holoIn .2s ease}
+@keyframes holoIn{from{opacity:0;transform:translateY(-50%) translateX(-6px)}to{opacity:1;transform:translateY(-50%) translateX(0)}}
+.holo-box::before{content:'';position:absolute;left:-7px;top:50%;transform:translateY(-50%);border:7px solid transparent;border-right-color:var(--c);border-left:none}
+.holo-box::after{content:'';position:absolute;inset:0;border-radius:4px;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0px,transparent 3px,rgba(0,229,255,.015) 3px,rgba(0,229,255,.015) 4px)}
+.holo-title{font-family:var(--fo);font-size:9px;letter-spacing:3px;color:var(--c);margin-bottom:12px;text-transform:uppercase}
+.holo-r{display:flex;justify-content:space-between;margin-bottom:5px;font-size:10px}
+.holo-l{color:var(--t3);font-family:var(--fm)}.holo-v{color:var(--w);font-family:var(--fm);font-weight:500;text-align:right;max-width:155px;word-break:break-all}
+.holo-sep{border:none;border-top:1px solid rgba(0,229,255,.1);margin:7px 0}
+#adminMap{height:310px;border-radius:3px;overflow:hidden;border:1px solid var(--border)}
+.modal-bg{display:none;position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.8);backdrop-filter:blur(8px);align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--glass2);backdrop-filter:blur(32px);border:1px solid var(--border);border-radius:4px;padding:28px;width:490px;max-width:95vw;max-height:88vh;overflow-y:auto;position:relative;box-shadow:var(--glow),0 40px 80px rgba(0,0,0,.6);animation:loginAppear .3s ease}
+.modal::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,var(--c),transparent)}
+.modal-title{font-family:var(--fo);font-size:15px;font-weight:500;letter-spacing:2px;margin-bottom:20px;color:var(--w)}
+.modal-close{position:absolute;top:14px;right:14px;background:rgba(255,45,85,.08);border:1px solid rgba(255,45,85,.2);border-radius:2px;color:var(--r);font-size:14px;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;transition:.2s}
+.modal-close:hover{background:var(--r);color:#fff}
+.modal-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.m-group{margin-bottom:0}
+.m-label{display:block;font-family:var(--fm);font-size:9px;letter-spacing:2px;color:var(--c);margin-bottom:6px;text-transform:uppercase;opacity:.8}
+.m-input{width:100%;padding:10px 13px;background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.15);border-radius:3px;color:var(--w);font-family:var(--fm);font-size:12px;outline:none;transition:.2s}
+.m-input:focus{border-color:var(--c);background:rgba(0,229,255,.07)}
+.m-input::placeholder{color:var(--t3)}
+.m-select{width:100%;padding:10px 13px;background:rgba(0,229,255,.04);border:1px solid rgba(0,229,255,.15);border-radius:3px;color:var(--w);font-family:var(--fd);font-size:13px;outline:none;cursor:pointer}
+.pass-note{font-family:var(--fm);font-size:9px;color:var(--t3);margin-top:3px}
+.modal-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,.04)}
+.btn-save{padding:10px 22px;border-radius:3px;background:linear-gradient(135deg,rgba(0,229,255,.12),rgba(124,58,237,.12));border:1px solid var(--border);color:var(--c);font-family:var(--fo);font-size:11px;font-weight:500;letter-spacing:2px;cursor:pointer;transition:.2s}
+.btn-save:hover{border-color:var(--c);box-shadow:var(--glow);color:var(--w)}
+.btn-cancel{padding:10px 18px;background:transparent;border:1px solid rgba(255,255,255,.08);border-radius:3px;color:var(--t2);font-family:var(--fd);font-size:13px;cursor:pointer;transition:.2s}
+.btn-cancel:hover{border-color:var(--r);color:var(--r)}
+.btn-danger{padding:10px 18px;background:rgba(255,45,85,.08);border:1px solid rgba(255,45,85,.2);border-radius:3px;color:var(--r);font-family:var(--fd);font-size:13px;cursor:pointer;transition:.2s}
+.btn-danger:hover{background:var(--r);color:#fff}
+.confirm-box{background:var(--glass2);backdrop-filter:blur(32px);border:1px solid rgba(255,45,85,.3);border-radius:4px;padding:32px;width:360px;max-width:95vw;text-align:center;box-shadow:0 0 40px rgba(255,45,85,.08),0 40px 80px rgba(0,0,0,.6)}
+.confirm-title{font-family:var(--fo);font-size:16px;font-weight:500;letter-spacing:2px;margin-bottom:10px;color:var(--r)}
+.confirm-msg{font-family:var(--fm);font-size:12px;color:var(--t2);margin-bottom:22px;line-height:1.6}
+.confirm-btns{display:flex;gap:10px;justify-content:center}
+.chart-wrap{height:180px;position:relative}
+.konv-item{background:rgba(0,229,255,.03);border:1px solid rgba(0,229,255,.08);border-radius:4px;padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:.2s}
+.konv-item:hover{border-color:rgba(0,229,255,.2);background:rgba(0,229,255,.05)}
+.konv-head{display:flex;justify-content:space-between;margin-bottom:5px}
+.konv-id{font-family:var(--fm);font-size:10px;color:var(--c);letter-spacing:2px}
+.konv-time{font-family:var(--fm);font-size:10px;color:var(--t3)}
+.konv-preview{font-size:12px;color:var(--t2)}
+.konv-expand{display:none;margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,.04)}
+.toast{position:fixed;bottom:24px;right:24px;z-index:9999;padding:12px 20px;background:var(--glass2);backdrop-filter:blur(20px);border-radius:3px;color:var(--w);font-family:var(--fm);font-size:12px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.4);animation:toastIn .4s cubic-bezier(.34,1.56,.64,1);max-width:320px;letter-spacing:.5px}
+.toast-ok{border:1px solid rgba(0,255,136,.3);box-shadow:0 0 20px rgba(0,255,136,.1),0 8px 32px rgba(0,0,0,.4)}.toast-err{border:1px solid rgba(255,45,85,.3);box-shadow:0 0 20px rgba(255,45,85,.1),0 8px 32px rgba(0,0,0,.4)}
+@keyframes toastIn{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:18px}.g3{display:grid;grid-template-columns:2fr 1fr;gap:18px}
+::-webkit-scrollbar{width:3px;height:3px}::-webkit-scrollbar-thumb{background:rgba(0,229,255,.2);border-radius:3px}::-webkit-scrollbar-thumb:hover{background:var(--c)}
+.page.active .kpi{animation:kpiIn .4s ease both}
+.page.active .kpi:nth-child(1){animation-delay:.05s}.page.active .kpi:nth-child(2){animation-delay:.1s}.page.active .kpi:nth-child(3){animation-delay:.15s}.page.active .kpi:nth-child(4){animation-delay:.2s}
+@keyframes kpiIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 </style>
 </head>
 <body>
+<div id="cursor"></div><div id="cursor-dot"></div>
+<div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+
 
 <!-- LOGIN -->
-<div id="login-screen">
+<div id="loginScreen">
   <div class="login-box">
     <div class="login-logo">
-      <div class="l1">ABKÄR-SE / ATLAS VALLEY</div>
-      <div class="l2">Atlas Delivery</div>
-      <div class="l3">ADMIN PANEL</div>
+      <div class="login-brand">Abkär-SE · Atlas Valley</div>
+      <div class="login-title">Atlas <span class="acc">Admin</span></div>
+      <div class="login-badge">⬡ SUDO ACCESS</div>
     </div>
-    <div class="login-form-title">Administratörsinloggning</div>
-    <div class="login-err" id="login-err"></div>
-    <div class="form-group">
-      <label class="lbl">E-postadress</label>
-      <input class="inp" id="login-email" type="email" placeholder="admin@atlasdel.se"/>
+    <div class="f-group">
+      <label class="f-label">E-post</label>
+      <input type="email" class="f-input" id="lEmail" placeholder="admin@atlasdel.se">
     </div>
-    <div class="form-group">
-      <label class="lbl">Lösenord</label>
-      <input class="inp" id="login-pass" type="password" placeholder="••••••••"/>
+    <div class="f-group">
+      <label class="f-label">Lösenord</label>
+      <input type="password" class="f-input" id="lPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
     </div>
-    <button class="btn btn-violet" style="width:100%;justify-content:center;padding:12px" onclick="doLogin()">Logga in</button>
+    <button class="btn-login" onclick="doLogin()">Logga in</button>
+    <div class="login-err" id="lErr"></div>
   </div>
 </div>
 
-<!-- SIDEBAR -->
-<div id="sidebar">
-  <div class="logo">
-    <div class="brand">ABKÄR-SE</div>
-    <div class="name">Atlas Delivery</div>
-    <div class="sub">ADMIN v3.0</div>
-  </div>
-  <nav>
-    <button class="active" onclick="setPage('dashboard')"><span class="icon">⬡</span> Dashboard</button>
-    <button onclick="setPage('orders')"><span class="icon">📋</span> Beställningar</button>
-    <button onclick="setPage('restaurants')"><span class="icon">🍽️</span> Restauranger</button>
-    <button onclick="setPage('riders')"><span class="icon">🛵</span> Bud</button>
-    <button onclick="setPage('menu')"><span class="icon">🗂️</span> Menyer</button>
-    <button onclick="setPage('conversations')"><span class="icon">💬</span> Konversationer</button>
-    <button onclick="setPage('accounts')"><span class="icon">👤</span> Konton</button>
-    <button onclick="setPage('customers')"><span class="icon">🧑‍🤝‍🧑</span> Kunder</button>
-    <button onclick="setPage('blacklist')"><span class="icon">🚫</span> Blacklist</button>
-    <button onclick="setPage('analytics')"><span class="icon">📈</span> Analys</button>
-    <button onclick="setPage('settings')"><span class="icon">⚙️</span> Inställningar</button>
+<!-- APP -->
+<div id="appShell">
+  <nav class="sidebar">
+    <div class="sb-head">
+      <div class="sb-brand">Atlas Delivery</div>
+      <div class="sb-name">Admin<span class="dot">.</span></div>
+      <div class="sb-role">SUDO</div>
+    </div>
+    <div class="sb-nav">
+      <button class="nav-btn active" onclick="goTo('dashboard')"><span class="nav-icon">⬡</span>Dashboard</button>
+      <button class="nav-btn" onclick="goTo('ordrar')"><span class="nav-icon">📋</span>Ordrar<span class="nav-badge" id="ordBadge" style="display:none">0</span></button>
+      <button class="nav-btn" onclick="goTo('restauranger')"><span class="nav-icon">🍽️</span>Restauranger</button>
+      <button class="nav-btn" onclick="goTo('bud')"><span class="nav-icon">🛵</span>Bud</button>
+      <button class="nav-btn" onclick="goTo('kunder')"><span class="nav-icon">👥</span>Kunder</button>
+      <button class="nav-btn" onclick="goTo('karta')"><span class="nav-icon">🗺️</span>Karta</button>
+      <button class="nav-btn" onclick="goTo('konversationer')"><span class="nav-icon">💬</span>Konversationer</button>
+      <button class="nav-btn" onclick="goTo('instaellningar')"><span class="nav-icon">⚙️</span>Inställningar</button>
+    </div>
+    <div class="sb-foot">
+      <button class="btn-logout" onclick="doLogout()">Logga ut</button>
+    </div>
   </nav>
-  <div class="sidebar-footer">
-    <div class="user-info" id="sidebar-user">admin@atlasdel.se</div>
-    <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%;justify-content:center" onclick="doLogout()">Logga ut</button>
-  </div>
-</div>
 
-<!-- MAIN -->
-<div id="main">
-  <div class="topbar">
-    <h1 id="page-title">Dashboard</h1>
-    <div style="display:flex;align-items:center;gap:16px">
-      <button class="btn btn-ghost btn-sm" onclick="exportCSV()">⬇ Exportera CSV</button>
-      <div class="live">LIVE SYNC</div>
+  <div class="main">
+    <div class="topbar">
+      <div class="tb-title" id="tbTitle">Dashboard</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <button onclick="exportCSV()" style="padding:7px 14px;background:transparent;border:1px solid var(--border);border-radius:7px;color:var(--text2);font-size:11px;cursor:pointer;font-family:var(--mono)">⬇ CSV</button>
+        <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+      </div>
     </div>
-  </div>
+    <div class="content">
 
-  <!-- DASHBOARD PAGE -->
-  <div class="page active" id="page-dashboard">
-    <div class="kpi-grid">
-      <div class="kpi cyan"><div class="kpi-label">Ordrar idag</div><div class="kpi-val" id="kpi-orders">–</div><div class="kpi-sub">live</div></div>
-      <div class="kpi green"><div class="kpi-label">Intäkter idag</div><div class="kpi-val" id="kpi-rev">–</div><div class="kpi-sub">SEK</div></div>
-      <div class="kpi violet"><div class="kpi-label">Aktiva bud</div><div class="kpi-val" id="kpi-riders">–</div><div class="kpi-sub">online</div></div>
-      <div class="kpi orange"><div class="kpi-label">Restauranger</div><div class="kpi-val" id="kpi-restaurants">–</div><div class="kpi-sub">aktiva</div></div>
-    </div>
-    <div class="grid-3">
-      <div class="panel">
-        <div class="panel-header"><span class="panel-title">Ordrar live</span><button class="btn btn-ghost btn-sm" onclick="setPage('orders')">Visa alla</button></div>
-        <div class="panel-body-scroll"><table class="data-table" id="dash-orders-table"><thead><tr><th>#</th><th>Kund</th><th>Restaurang</th><th>Totalt</th><th>Status</th></tr></thead><tbody id="dash-orders-body"></tbody></table></div>
-      </div>
-      <div class="panel">
-        <div class="panel-header"><span class="panel-title">Bud-karta</span></div>
-        <div class="panel-body" style="padding:12px"><div id="riders-map"></div></div>
-      </div>
-    </div>
-    <div class="grid-2">
-      <div class="panel">
-        <div class="panel-header"><span class="panel-title">Intäkter — 7 dagar</span></div>
-        <div class="panel-body"><div class="chart-wrap"><canvas id="rev-chart"></canvas></div></div>
-      </div>
-      <div class="panel">
-        <div class="panel-header"><span class="panel-title">Ordrar — 7 dagar</span></div>
-        <div class="panel-body"><div class="chart-wrap"><canvas id="ord-chart"></canvas></div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ORDERS PAGE -->
-  <div class="page" id="page-orders">
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">Alla beställningar</span>
-        <div style="display:flex;gap:8px">
-          <input class="inp" style="width:200px" placeholder="Sök order..." id="order-search" oninput="filterOrders()"/>
-          <select class="inp" style="width:140px" id="order-filter" onchange="filterOrders()">
-            <option value="">Alla status</option>
-            <option value="new">Ny</option>
-            <option value="preparing">Tillagas</option>
-            <option value="ready">Klar</option>
-            <option value="picked">Hämtad</option>
-            <option value="delivered">Levererad</option>
-          </select>
+      <!-- DASHBOARD -->
+      <div class="page active" id="pg-dashboard">
+        <div class="kpi-grid">
+          <div class="kpi"><div class="kpi-label">Ordrar idag</div><div class="kpi-val c" id="kOrdrar">–</div></div>
+          <div class="kpi"><div class="kpi-label">Intäkter idag</div><div class="kpi-val g" id="kIntakter">–</div></div>
+          <div class="kpi"><div class="kpi-label">Bud online</div><div class="kpi-val v" id="kBud">–</div></div>
+          <div class="kpi"><div class="kpi-label">Restauranger</div><div class="kpi-val o" id="kRest">–</div></div>
         </div>
-      </div>
-      <div class="panel-body-scroll" style="max-height:520px">
-        <table class="data-table" id="orders-table">
-          <thead><tr><th>#</th><th>Kund</th><th>Telefon</th><th>Adress</th><th>Restaurang</th><th>Bud</th><th>Totalt</th><th>Leverans</th><th>Tid</th><th>Status</th><th>Chat</th></tr></thead>
-          <tbody id="orders-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- RESTAURANTS PAGE -->
-  <div class="page" id="page-restaurants">
-    <div class="panel">
-      <div class="panel-header"><span class="panel-title">Restauranger</span></div>
-      <div class="panel-body-scroll" style="max-height:520px">
-        <table class="data-table" id="restaurants-table">
-          <thead><tr><th>Namn</th><th>Telefon</th><th>Adress</th><th>Öppettider</th><th>Status</th><th>Ordrar totalt</th><th>Åtgärder</th></tr></thead>
-          <tbody id="restaurants-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- RIDERS PAGE -->
-  <div class="page" id="page-riders">
-    <div class="panel">
-      <div class="panel-header"><span class="panel-title">Bud</span></div>
-      <div class="panel-body-scroll" style="max-height:520px">
-        <table class="data-table" id="riders-table">
-          <thead><tr><th>Namn</th><th>E-post</th><th>Telefon</th><th>Status</th><th>Leveranser</th><th>Åtgärder</th></tr></thead>
-          <tbody id="riders-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- MENU PAGE -->
-  <div class="page" id="page-menu">
-    <div class="panel" style="margin-bottom:20px">
-      <div class="panel-header">
-        <span class="panel-title">Hantera menyer</span>
-        <div style="display:flex;gap:8px">
-          <select class="inp" style="width:200px" id="menu-rest-filter" onchange="loadMenuItems()">
-            <option value="">Välj restaurang...</option>
-          </select>
-          <button class="btn btn-cyan btn-sm" onclick="openAddMenuItem()">+ Lägg till rätt</button>
-        </div>
-      </div>
-      <div class="panel-body">
-        <div class="menu-grid" id="menu-grid"><div style="color:var(--text2);font-family:var(--mono);font-size:12px">Välj en restaurang ovan för att hantera dess meny.</div></div>
-      </div>
-    </div>
-  </div>
-
-  <!-- CONVERSATIONS PAGE -->
-  <div class="page" id="page-conversations">
-    <div class="grid-2">
-      <div class="panel">
-        <div class="panel-header"><span class="panel-title">Aktiva konversationer</span></div>
-        <div class="panel-body"><div class="chat-list" id="conv-list"></div></div>
-      </div>
-      <div class="panel">
-        <div class="panel-header">
-          <span class="panel-title" id="conv-detail-title">Välj en konversation</span>
-          <button class="btn btn-ghost btn-sm" onclick="closeConvDetail()">✕ Stäng</button>
-        </div>
-        <div class="chat-msgs" id="conv-msgs" style="max-height:400px"></div>
-        <div class="chat-input-row">
-          <input class="inp" id="admin-msg-inp" placeholder="Skriv som admin..."/>
-          <button class="btn btn-cyan btn-sm" onclick="sendAdminMsg()">Skicka</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- ACCOUNTS PAGE -->
-  <div class="page" id="page-accounts">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
-      <div class="panel">
-        <div class="panel-header"><span class="panel-title">Skapa konto</span></div>
-        <div class="panel-body">
-          <div class="form-group">
-            <label class="lbl">Roll</label>
-            <select class="inp" id="new-role" onchange="updateAccountForm()">
-              <option value="restaurant">Restaurang</option>
-              <option value="rider">Bud</option>
-            </select>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px">
+          <div class="tbl-wrap">
+            <div class="tbl-toolbar"><span style="font-weight:700;font-size:14px">Senaste ordrar</span></div>
+            <div id="dashOrdrar"></div>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="lbl">Namn</label>
-              <input class="inp" id="new-name" placeholder="Restaurangnamn / Förnamn Efternamn"/>
-            </div>
-            <div class="form-group">
-              <label class="lbl">E-post</label>
-              <input class="inp" id="new-email" type="email" placeholder="namn@atlasdel.se"/>
-            </div>
+          <div class="tbl-wrap">
+            <div class="tbl-toolbar"><span style="font-weight:700;font-size:14px">Intäkter 7 dagar</span></div>
+            <div style="padding:16px"><div class="chart-wrap"><canvas id="chartRev"></canvas></div></div>
           </div>
-          <div class="form-row">
-            <div class="form-group">
-              <label class="lbl">Lösenord</label>
-              <input class="inp" id="new-pass" type="password" placeholder="Minst 8 tecken"/>
-            </div>
-            <div class="form-group">
-              <label class="lbl">Telefon</label>
-              <input class="inp" id="new-phone" placeholder="+46 ..."/>
-            </div>
+        </div>
+      </div>
+
+      <!-- ORDRAR -->
+      <div class="page" id="pg-ordrar">
+        <div class="tbl-wrap">
+          <div class="tbl-toolbar">
+            <input class="tbl-search" placeholder="Sök order..." oninput="filterTbl(this,'ordrarBody')">
           </div>
-          <div class="form-group" id="rest-assign-group">
-            <label class="lbl">Tilldela restaurang</label>
-            <select class="inp" id="new-rest-assign"><option value="">Välj restaurang...</option></select>
+          <div style="overflow-x:auto"><table><thead><tr>
+            <th>ID</th><th>Kund</th><th>Tel</th><th>Restaurang</th><th>Bud</th><th>Totalt</th><th>Status</th>
+          </tr></thead><tbody id="ordrarBody"></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- RESTAURANGER -->
+      <div class="page" id="pg-restauranger">
+        <div class="tbl-wrap">
+          <div class="tbl-toolbar">
+            <input class="tbl-search" placeholder="Sök restaurang..." oninput="filterTbl(this,'restBody')">
+            <button class="btn-new" onclick="openRestModal()">+ Ny restaurang</button>
           </div>
-          <button class="btn btn-violet" style="width:100%;justify-content:center" onclick="createAccount()">Skapa konto</button>
-          <div id="create-result" style="margin-top:12px;font-size:12px;font-family:var(--mono)"></div>
+          <div style="overflow-x:auto"><table><thead><tr>
+            <th>Namn</th><th>E-post</th><th>Telefon</th><th>Adress</th><th>Status</th><th>Åtgärder</th>
+          </tr></thead><tbody id="restBody"></tbody></table></div>
         </div>
       </div>
-      <div class="panel">
-        <div class="panel-header"><span class="panel-title">Befintliga konton</span></div>
-        <div class="panel-body-scroll" style="max-height:460px">
-          <table class="data-table" id="accounts-table">
-            <thead><tr><th>Namn</th><th>E-post</th><th>Roll</th><th>Skapad</th></tr></thead>
-            <tbody id="accounts-body"></tbody>
-          </table>
+
+      <!-- BUD -->
+      <div class="page" id="pg-bud">
+        <div class="tbl-wrap">
+          <div class="tbl-toolbar">
+            <input class="tbl-search" placeholder="Sök bud..." oninput="filterTbl(this,'budBody')">
+            <button class="btn-new" onclick="openBudModal()">+ Nytt bud</button>
+          </div>
+          <div style="overflow-x:auto"><table><thead><tr>
+            <th>Namn</th><th>E-post</th><th>Telefon</th><th>Status</th><th>Leveranser</th><th>Åtgärder</th>
+          </tr></thead><tbody id="budBody"></tbody></table></div>
         </div>
       </div>
-    </div>
-  </div>
 
-  <!-- BLACKLIST PAGE -->
-  <div class="page" id="page-blacklist">
-    <div class="panel">
-      <div class="panel-header">
-        <span class="panel-title">Blacklist</span>
-        <button class="btn btn-red btn-sm" onclick="openAddBlacklist()">+ Lägg till</button>
-      </div>
-      <div class="panel-body-scroll" style="max-height:480px">
-        <table class="data-table" id="blacklist-table">
-          <thead><tr><th>E-post</th><th>Anledning</th><th>Datum</th><th>Åtgärder</th></tr></thead>
-          <tbody id="blacklist-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- KUNDER PAGE -->
-  <div class="page" id="page-customers">
-    <div class="panel" style="margin-bottom:20px">
-      <div class="panel-header" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-        <span class="panel-title">Kunder</span>
-        <input id="cust-search" placeholder="Sök på namn, e-post eller telefon..." oninput="filterCustomers()" style="flex:1;min-width:200px;background:var(--bg3);border:1px solid var(--border);border-radius:6px;padding:7px 12px;color:var(--text);font-family:var(--mono);font-size:11px;outline:none"/>
-        <span id="cust-count" style="font-size:11px;color:var(--text2);font-family:var(--mono);white-space:nowrap"></span>
-      </div>
-      <div class="panel-body-scroll" style="max-height:560px">
-        <table class="data-table" id="customers-table">
-          <thead>
-            <tr>
-              <th>Kund</th>
-              <th>E-post</th>
-              <th>Telefon</th>
-              <th>Adress</th>
-              <th>Ordrar</th>
-              <th>Totalt spenderat</th>
-              <th>Senaste order</th>
-              <th>Åtgärder</th>
-            </tr>
-          </thead>
-          <tbody id="customers-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- BLACKLIST PAGE -->
-  <div class="page" id="page-analytics">
-    <div class="kpi-grid" style="margin-bottom:20px">
-      <div class="kpi cyan"><div class="kpi-label">Totala ordrar</div><div class="kpi-val" id="an-total">–</div></div>
-      <div class="kpi green"><div class="kpi-label">Total intäkt</div><div class="kpi-val" id="an-rev">–</div></div>
-      <div class="kpi violet"><div class="kpi-label">Snittpris/order</div><div class="kpi-val" id="an-avg">–</div></div>
-      <div class="kpi orange"><div class="kpi-label">Medelavstånd</div><div class="kpi-val" id="an-dist">–</div></div>
-    </div>
-    <div class="grid-2">
-      <div class="panel">
-        <div class="panel-header"><span class="panel-title">Intäkter per dag (30 dagar)</span></div>
-        <div class="panel-body"><div style="height:220px"><canvas id="an-rev-chart"></canvas></div></div>
-      </div>
-      <div class="panel">
-        <div class="panel-header"><span class="panel-title">Ordrar per status</span></div>
-        <div class="panel-body"><div style="height:220px"><canvas id="an-status-chart"></canvas></div></div>
-      </div>
-    </div>
-    <div class="panel" style="margin-top:20px">
-      <div class="panel-header"><span class="panel-title">Top restauranger</span></div>
-      <div class="panel-body-scroll" style="max-height:300px">
-        <table class="data-table" id="top-rest-table">
-          <thead><tr><th>Restaurang</th><th>Ordrar</th><th>Intäkt mat</th></tr></thead>
-          <tbody id="top-rest-body"></tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  <!-- SETTINGS PAGE -->
-  <div class="page" id="page-settings">
-    <div class="settings-grid">
-      <div class="settings-card">
-        <div class="settings-title">Leveranstaxa</div>
-        <div class="form-group">
-          <label class="lbl">Grundavgift (kr)</label>
-          <input class="inp" id="set-base" type="number" placeholder="29"/>
-        </div>
-        <div class="form-group">
-          <label class="lbl">Taxa per km (kr)</label>
-          <input class="inp" id="set-km" type="number" placeholder="8"/>
-        </div>
-        <button class="btn btn-cyan" onclick="saveSettings()">Spara leveranstaxa</button>
-      </div>
-      <div class="settings-card">
-        <div class="settings-title">Platform-info</div>
-        <div style="font-size:12px;font-family:var(--mono);color:var(--text2);line-height:2">
-          <div>Supabase: <span style="color:var(--green)">●</span> Ansluten</div>
-          <div>Stripe: <span style="color:var(--green)">●</span> Test mode</div>
-          <div>Realtime: <span style="color:var(--green)">●</span> Aktiv</div>
-          <div>Stadt: Nyköping, SE</div>
-          <div>Modell: 0% restaurangavgift</div>
-          <div>Version: 3.0.0</div>
+      <!-- KUNDER -->
+      <div class="page" id="pg-kunder">
+        <div class="tbl-wrap">
+          <div class="tbl-toolbar">
+            <input class="tbl-search" placeholder="Sök kund..." oninput="filterTbl(this,'kundBody')">
+            <button class="btn-new" onclick="openKundModal()">+ Ny kund</button>
+          </div>
+          <div style="overflow-x:auto"><table><thead><tr>
+            <th>Namn</th><th>Telefon</th><th>Adress</th><th>Ordrar</th><th>Totalt</th><th>Senast</th><th>Åtgärder</th>
+          </tr></thead><tbody id="kundBody"></tbody></table></div>
         </div>
       </div>
-    </div>
-  </div>
 
-</div><!-- /main -->
+      <!-- KARTA -->
+      <div class="page" id="pg-karta">
+        <div class="tbl-wrap" style="padding:16px">
+          <div id="adminMap"></div>
+        </div>
+      </div>
 
-<!-- CHAT MODAL -->
-<div class="chat-modal" id="chat-modal">
-  <div class="chat-box">
-    <div class="chat-box-header">
-      <span class="chat-box-title" id="chat-modal-title">Order #–––</span>
-      <button class="btn btn-ghost btn-sm" onclick="closeChatModal()">✕</button>
-    </div>
-    <div class="chat-msgs" id="chat-modal-msgs"></div>
-    <div class="chat-input-row">
-      <input class="inp" id="chat-modal-inp" placeholder="Skriv som admin..."/>
-      <button class="btn btn-cyan btn-sm" onclick="sendChatFromModal()">Skicka</button>
+      <!-- KONVERSATIONER -->
+      <div class="page" id="pg-konversationer">
+        <div id="konvList" style="display:flex;flex-direction:column;gap:10px"></div>
+      </div>
+
+      <!-- INSTÄLLNINGAR -->
+      <div class="page" id="pg-instaellningar">
+        <div class="tbl-wrap" style="padding:22px;max-width:440px">
+          <div style="font-size:12px;font-weight:700;color:var(--cyan);letter-spacing:1px;font-family:var(--mono);margin-bottom:16px;text-transform:uppercase">Leveranstaxa</div>
+          <div class="modal-grid" style="margin-bottom:16px">
+            <div><label class="m-label">Baskostnad (kr)</label><input class="m-input" id="sFee" type="number" value="29"></div>
+            <div><label class="m-label">Per km (kr)</label><input class="m-input" id="sKm" type="number" value="8"></div>
+          </div>
+          <button class="btn-save" onclick="saveSettings()">Spara</button>
+        </div>
+      </div>
+
     </div>
   </div>
 </div>
 
-<!-- NOTIFICATION -->
-<div class="notif" id="notif"></div>
+<!-- MODAL: RESTAURANT -->
+<div class="modal-bg" id="modalRest">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modalRest')">✕</button>
+    <div class="modal-title" id="restModalTitle">Ny restaurang</div>
+    <div class="modal-grid">
+      <div class="m-group"><label class="m-label">Namn *</label><input class="m-input" id="rNamn" placeholder="Restaurangens namn"></div>
+      <div class="m-group"><label class="m-label">Kökstyp</label><input class="m-input" id="rKok" placeholder="Pizza, Sushi..."></div>
+      <div class="m-group"><label class="m-label">E-post (login) *</label><input class="m-input" id="rEmail" placeholder="rest@atlasdel.se"></div>
+      <div class="m-group"><label class="m-label">Lösenord</label><input class="m-input" id="rPass" type="password" placeholder="Lämna tomt = behåll"><div class="pass-note">Lämna tomt vid redigering</div></div>
+      <div class="m-group"><label class="m-label">Telefon</label><input class="m-input" id="rTel" placeholder="+46..."></div>
+      <div class="m-group"><label class="m-label">Stad</label><input class="m-input" id="rStad" placeholder="Nyköping"></div>
+    </div>
+    <div style="margin-top:12px"><label class="m-label">Adress</label><input class="m-input" id="rAdress" placeholder="Gatuadress"></div>
+    <div style="margin-top:12px"><label class="m-label">Öppettider</label><input class="m-input" id="rTimmar" placeholder="11:00–22:00"></div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="restDelBtn" onclick="deleteEntity('restaurant')" style="display:none">Ta bort</button>
+      <button class="btn-cancel" onclick="closeModal('modalRest')">Avbryt</button>
+      <button class="btn-save" onclick="saveRestaurant()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: BUD -->
+<div class="modal-bg" id="modalBud">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modalBud')">✕</button>
+    <div class="modal-title" id="budModalTitle">Nytt bud</div>
+    <div class="modal-grid">
+      <div class="m-group"><label class="m-label">Namn *</label><input class="m-input" id="dNamn" placeholder="Förnamn Efternamn"></div>
+      <div class="m-group"><label class="m-label">E-post (login) *</label><input class="m-input" id="dEmail" placeholder="bud@atlasdel.se"></div>
+      <div class="m-group"><label class="m-label">Lösenord</label><input class="m-input" id="dPass" type="password" placeholder="Lämna tomt = behåll"><div class="pass-note">Lämna tomt vid redigering</div></div>
+      <div class="m-group"><label class="m-label">Telefon</label><input class="m-input" id="dTel" placeholder="+46..."></div>
+      <div class="m-group"><label class="m-label">Adress</label><input class="m-input" id="dAdress" placeholder="Hemadress"></div>
+      <div class="m-group"><label class="m-label">Stad</label><input class="m-input" id="dStad" placeholder="Nyköping"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-danger" id="budDelBtn" onclick="deleteEntity('rider')" style="display:none">Ta bort</button>
+      <button class="btn-cancel" onclick="closeModal('modalBud')">Avbryt</button>
+      <button class="btn-save" onclick="saveBud()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: KUND -->
+<div class="modal-bg" id="modalKund">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('modalKund')">✕</button>
+    <div class="modal-title" id="kundModalTitle">Redigera kund</div>
+    <div class="modal-grid">
+      <div class="m-group"><label class="m-label">Namn</label><input class="m-input" id="cNamn"></div>
+      <div class="m-group"><label class="m-label">Telefon</label><input class="m-input" id="cTel"></div>
+      <div class="m-group"><label class="m-label">E-post</label><input class="m-input" id="cEmail"></div>
+      <div class="m-group"><label class="m-label">Stad</label><input class="m-input" id="cStad" value="Nyköping"></div>
+    </div>
+    <div style="margin-top:12px"><label class="m-label">Adress</label><input class="m-input" id="cAdress"></div>
+    <div style="margin-top:12px">
+      <label class="m-label">Status</label>
+      <select class="m-select" id="cStatus"><option value="aktiv">Aktiv</option><option value="blacklist">Blacklistad</option></select>
+    </div>
+    <div style="margin-top:12px"><label class="m-label">Anledning (om blacklist)</label><input class="m-input" id="cAnledning" placeholder="Bedrägeri, no-show..."></div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal('modalKund')">Avbryt</button>
+      <button class="btn-save" onclick="saveKund()">Spara</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM -->
+<div class="modal-bg" id="modalConfirm">
+  <div class="confirm-box">
+    <div class="confirm-title" id="confirmTitle">Bekräfta</div>
+    <div class="confirm-msg" id="confirmMsg">Är du säker?</div>
+    <div class="confirm-btns">
+      <button class="btn-cancel" onclick="closeModal('modalConfirm')">Avbryt</button>
+      <button class="btn-danger" id="confirmOk">Ja, ta bort</button>
+    </div>
+  </div>
+</div>
 
 <script>
-// ─── SUPABASE ───────────────────────────────────────────────
-const SB = supabase.createClient(
-  'https://vgtdswplzuhbhhlmxrgg.supabase.co',
-  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZndGRzd3BsenVoYmhobG14cmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMTY2ODIsImV4cCI6MjA4ODU5MjY4Mn0.82sk-40cQo7NxeRWUgthTzp_fk1TlBcqPchrBGGIFnU'
-);
+const SB_URL = 'https://vgtdswplzuhbhhlmxrgg.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZndGRzd3BsenVoYmhobG14cmdnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMwMTY2ODIsImV4cCI6MjA4ODU5MjY4Mn0.82sk-40cQo7NxeRWUgthTzp_fk1TlBcqPchrBGGIFnU';
+const { createClient } = supabase;
+const SB = createClient(SB_URL, SB_KEY);
 
-// ─── STATE ───────────────────────────────────────────────────
-let currentUser = null;
-let allOrders = [];
-let allRiders = [];
-let allRestaurants = [];
-let currentChatOrderId = null;
-let currentConvOrderId = null;
-let ridersMap = null;
+let currentPage = 'dashboard';
+let editingId = null;
+let editingType = null;
+let adminMap = null;
 let riderMarkers = {};
-let revChart = null, ordChart = null, anRevChart = null, anStatusChart = null;
+let revChart = null;
+let allOrders = [], allRiders = [], allRests = [], allKunder = [];
 
-// ─── LOGIN ───────────────────────────────────────────────────
+// ── LOGIN ───────────────────────────────────────────────────
 async function doLogin() {
-  const email = document.getElementById('login-email').value.trim();
-  const pass = document.getElementById('login-pass').value;
-  const err = document.getElementById('login-err');
+  const email = document.getElementById('lEmail').value.trim();
+  const pass  = document.getElementById('lPass').value;
+  const err   = document.getElementById('lErr');
   err.style.display = 'none';
+  if (!email || !pass) { showErr('Fyll i alla fält'); return; }
+
   const { data, error } = await SB.auth.signInWithPassword({ email, password: pass });
-  if (error) { err.textContent = error.message; err.style.display = 'block'; return; }
-  const { data: prof } = await SB.from('profiles').select('role').eq('id', data.user.id).single();
-  if (!prof || prof.role !== 'admin') {
-    await SB.auth.signOut();
-    err.textContent = 'Åtkomst nekad — inte ett adminkonto.';
-    err.style.display = 'block';
-    return;
-  }
-  currentUser = data.user;
-  document.getElementById('sidebar-user').textContent = email;
-  document.getElementById('login-screen').style.display = 'none';
+  if (error) { showErr('Fel e-post eller lösenord'); return; }
+
+  // Check admin — try profiles table, fall back to allow if table doesn't have role col
+  let isAdmin = false;
+  try {
+    const { data: prof } = await SB.from('profiles').select('role').eq('id', data.user.id).maybeSingle();
+    isAdmin = !prof || prof.role === 'admin'; // if no profile yet, allow (first admin)
+  } catch(e) { isAdmin = true; }
+
+  if (!isAdmin) { showErr('Åtkomst nekad — inte ett adminkonto'); await SB.auth.signOut(); return; }
+
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('appShell').style.display = 'flex';
   init();
 }
-async function doLogout() {
-  await SB.auth.signOut();
-  location.reload();
-}
-document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
 
-// ─── INIT ────────────────────────────────────────────────────
+function showErr(msg) { const e = document.getElementById('lErr'); e.style.display = 'block'; e.textContent = msg; }
+async function doLogout() { await SB.auth.signOut(); location.reload(); }
+
+// ── INIT ────────────────────────────────────────────────────
 async function init() {
-  await Promise.all([loadOrders(), loadRiders(), loadRestaurants(), loadSettings()]);
-  updateKPIs();
-  buildDashCharts();
-  initRidersMap();
+  await Promise.all([loadOrders(), loadRiders(), loadRests(), loadSettings()]);
+  renderDashboard();
   subscribeRealtime();
-  populateRestaurantSelects();
-  loadAccounts();
-  loadBlacklist();
-  loadConversations();
-  loadAnalytics();
 }
 
-// ─── PAGE NAV ────────────────────────────────────────────────
-function setPage(name) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
-  document.getElementById('page-' + name).classList.add('active');
-  const titles = {dashboard:'Dashboard',orders:'Beställningar',restaurants:'Restauranger',riders:'Bud',menu:'Menyer',conversations:'Konversationer',accounts:'Konton',customers:'Kunder',blacklist:'Blacklist',analytics:'Analys',settings:'Inställningar'};
-  document.getElementById('page-title').textContent = titles[name] || name;
-  document.querySelectorAll('nav button').forEach(b => { if (b.textContent.trim().toLowerCase().includes(name.substring(0,4))) b.classList.add('active'); });
-  if (name === 'orders') renderOrdersTable();
-  if (name === 'restaurants') renderRestaurantsTable();
-  if (name === 'riders') renderRidersTable();
-  if (name === 'analytics') loadAnalytics();
-  if (name === 'conversations') loadConversations();
-  if (name === 'menu') populateMenuRestaurantFilter();
-  if (name === 'customers') loadCustomers();
+function subscribeRealtime() {
+  SB.channel('admin-rt')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, async () => {
+      await loadOrders(); refreshBadge();
+      if (currentPage === 'dashboard') renderDashboard();
+      if (currentPage === 'ordrar') renderOrdrarPage();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'restaurants' }, async () => {
+      await loadRests();
+      if (currentPage === 'restauranger') renderRestaurangerPage();
+    })
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'riders' }, async () => {
+      await loadRiders();
+      if (currentPage === 'bud') renderBudPage();
+      if (currentPage === 'karta') updateMapMarkers();
+    })
+    .subscribe();
 }
 
-// ─── LOAD DATA ───────────────────────────────────────────────
+// ── DATA ────────────────────────────────────────────────────
 async function loadOrders() {
   const { data } = await SB.from('orders').select('*').order('created_at', { ascending: false }).limit(200);
   allOrders = data || [];
-  renderDashOrders();
-  renderOrdersTable();
+  refreshBadge();
 }
 async function loadRiders() {
-  const { data } = await SB.from('riders').select('*');
+  const { data } = await SB.from('riders').select('*').order('name');
   allRiders = data || [];
-  renderRidersTable();
 }
-async function loadRestaurants() {
-  const { data } = await SB.from('restaurants').select('*');
-  allRestaurants = data || [];
-  renderRestaurantsTable();
+async function loadRests() {
+  const { data } = await SB.from('restaurants').select('*').order('name');
+  allRests = data || [];
 }
 async function loadSettings() {
   const { data } = await SB.from('settings').select('*');
-  if (data) {
-    const base = data.find(r => r.key === 'delivery_base_fee');
-    const km = data.find(r => r.key === 'delivery_per_km');
-    if (base) document.getElementById('set-base').value = base.value;
-    if (km) document.getElementById('set-km').value = km.value;
-  }
+  (data || []).forEach(s => {
+    if (s.key === 'delivery_base_fee') document.getElementById('sFee').value = s.value;
+    if (s.key === 'delivery_per_km') document.getElementById('sKm').value = s.value;
+  });
 }
 
-// ─── KPIs ────────────────────────────────────────────────────
-function updateKPIs() {
-  const today = new Date().toISOString().slice(0, 10);
-  const todayOrders = allOrders.filter(o => o.created_at && o.created_at.startsWith(today));
-  const todayRev = todayOrders.reduce((s, o) => s + (o.total || 0), 0);
-  const onlineRiders = allRiders.filter(r => r.online).length;
-  document.getElementById('kpi-orders').textContent = todayOrders.length;
-  document.getElementById('kpi-rev').textContent = todayRev.toFixed(0) + ' kr';
-  document.getElementById('kpi-riders').textContent = onlineRiders;
-  document.getElementById('kpi-restaurants').textContent = allRestaurants.filter(r => r.is_open).length;
+function refreshBadge() {
+  const n = allOrders.filter(o => o.status === 'new' || o.status === 'pending' || o.status === 'paid').length;
+  const b = document.getElementById('ordBadge');
+  b.style.display = n > 0 ? 'inline' : 'none';
+  b.textContent = n;
 }
 
-// ─── HOLOGRAM DATA BUILDER ───────────────────────────────────
-function buildHolo(order) {
-  const ts = order.created_at ? new Date(order.created_at).toLocaleString('sv-SE') : '–';
-  return [
-    `ORDER      ${order.order_number || order.id?.slice(0,8) || '–'}`,
-    `─────────────────────────────────`,
-    `Kund       ${order.customer_name || '–'}`,
-    `Telefon    ${order.customer_phone || '–'}`,
-    `Adress     ${order.customer_address || order.delivery_address || '–'}`,
-    `─────────────────────────────────`,
-    `Restaurang ${order.restaurant_name || '–'}`,
-    `Bud        ${order.rider_name || 'Ej tilldelad'}`,
-    `─────────────────────────────────`,
-    `Mat        ${(order.subtotal || 0).toFixed(0)} kr`,
-    `Leverans   ${(order.delivery_fee || 0).toFixed(0)} kr`,
-    `Dricks     ${(order.tip || 0).toFixed(0)} kr`,
-    `TOTALT     ${(order.total || 0).toFixed(0)} kr`,
-    `─────────────────────────────────`,
-    `Tid        ${ts}`,
-    `Status     ${order.status?.toUpperCase() || '–'}`
-  ].join('\n');
+// ── NAV ─────────────────────────────────────────────────────
+function goTo(page) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('pg-' + page).classList.add('active');
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    if (b.textContent.toLowerCase().includes(page.substring(0,4))) b.classList.add('active');
+  });
+  document.getElementById('tbTitle').textContent = {
+    dashboard:'Dashboard', ordrar:'Ordrar', restauranger:'Restauranger',
+    bud:'Bud', kunder:'Kunder', karta:'Karta', konversationer:'Konversationer', instaellningar:'Inställningar'
+  }[page] || page;
+  currentPage = page;
+  const fns = { dashboard: renderDashboard, ordrar: renderOrdrarPage, restauranger: renderRestaurangerPage,
+    bud: renderBudPage, kunder: renderKunderPage, karta: renderKartaPage,
+    konversationer: renderKonvPage, instaellningar: ()=>{} };
+  if (fns[page]) fns[page]();
 }
 
-// ─── RENDER DASH ORDERS ──────────────────────────────────────
-function renderDashOrders() {
-  const tbody = document.getElementById('dash-orders-body');
-  const recent = allOrders.slice(0, 12);
-  tbody.innerHTML = recent.map(o => `
-    <tr class="holo-trigger" data-holo="${escHolo(buildHolo(o))}" onmousemove="setHoloPos(event)">
-      <td style="color:var(--cyan);font-family:var(--mono)">${o.order_number || o.id?.slice(0,8) || '–'}</td>
-      <td>${o.customer_name || '–'}</td>
-      <td>${o.restaurant_name || '–'}</td>
-      <td style="font-family:var(--mono)">${(o.total||0).toFixed(0)} kr</td>
-      <td>${statusBadge(o.status)}</td>
-    </tr>`).join('');
+// ── DASHBOARD ────────────────────────────────────────────────
+function renderDashboard() {
+  const today = new Date().toDateString();
+  const todayOrds = allOrders.filter(o => new Date(o.created_at).toDateString() === today);
+  const todayRev = todayOrds.reduce((s, o) => s + (o.total_amount || o.total || 0), 0);
+  document.getElementById('kOrdrar').textContent = todayOrds.length;
+  document.getElementById('kIntakter').textContent = todayRev + ' kr';
+  document.getElementById('kBud').textContent = allRiders.filter(r => r.status === 'online').length;
+  document.getElementById('kRest').textContent = allRests.filter(r => r.is_open).length;
+
+  // Recent orders table
+  const recent = allOrders.slice(0, 10);
+  document.getElementById('dashOrdrar').innerHTML = `
+    <table><thead><tr><th>ID</th><th>Kund</th><th>Totalt</th><th>Status</th></tr></thead>
+    <tbody>${recent.map(o => `<tr class="holo-row">
+      <td class="td-mono">${(o.id || '').slice(0, 8)}</td>
+      <td class="td-name">${o.customer_name || '–'}</td>
+      <td style="font-family:var(--mono);color:var(--green)">${o.total_amount || o.total || 0} kr</td>
+      <td>${statusPill(o.status)}</td>
+      ${holoBox(o)}
+    </tr>`).join('')}</tbody></table>`;
+
+  buildRevChart();
 }
 
-// ─── RENDER ORDERS TABLE ─────────────────────────────────────
-function renderOrdersTable(orders) {
-  const list = orders || allOrders;
-  const tbody = document.getElementById('orders-body');
-  tbody.innerHTML = list.map(o => {
-    const ts = o.created_at ? new Date(o.created_at).toLocaleTimeString('sv-SE', {hour:'2-digit',minute:'2-digit'}) : '–';
-    return `<tr class="holo-trigger" data-holo="${escHolo(buildHolo(o))}" onmousemove="setHoloPos(event)">
-      <td style="color:var(--cyan);font-family:var(--mono);font-size:11px">${o.order_number || o.id?.slice(0,8) || '–'}</td>
-      <td>${o.customer_name || '–'}</td>
-      <td style="font-family:var(--mono);font-size:11px">${o.customer_phone || '–'}</td>
-      <td style="font-size:11px;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${o.customer_address || o.delivery_address || '–'}</td>
-      <td>${o.restaurant_name || '–'}</td>
-      <td>${o.rider_name || '<span style="color:var(--text2)">–</span>'}</td>
-      <td style="font-family:var(--mono)">${(o.total||0).toFixed(0)} kr</td>
-      <td style="font-family:var(--mono)">${(o.delivery_fee||0).toFixed(0)} kr</td>
-      <td style="font-family:var(--mono);font-size:11px">${ts}</td>
-      <td>${statusBadge(o.status)}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="openChat('${o.id}','${escAttr(o.order_number||o.id?.slice(0,8)||'')}')">💬</button></td>
-    </tr>`;
-  }).join('');
+function statusPill(s) {
+  const map = { pending:'pill-orange', paid:'pill-orange', new:'pill-orange', accepted:'pill-violet',
+    ready:'pill-on', picked:'pill-violet', delivered:'pill-off', cancelled:'pill-red' };
+  const labels = { pending:'Ny', paid:'Betald', new:'Ny', accepted:'Mottagen',
+    ready:'Klar', picked:'Hämtad', delivered:'Levererad', cancelled:'Annullerad' };
+  return `<span class="pill ${map[s]||'pill-off'}">${labels[s]||s}</span>`;
 }
 
-function filterOrders() {
-  const q = document.getElementById('order-search').value.toLowerCase();
-  const st = document.getElementById('order-filter').value;
-  let filtered = allOrders;
-  if (q) filtered = filtered.filter(o =>
-    (o.customer_name||'').toLowerCase().includes(q) ||
-    (o.order_number||'').toLowerCase().includes(q) ||
-    (o.restaurant_name||'').toLowerCase().includes(q)
-  );
-  if (st) filtered = filtered.filter(o => o.status === st);
-  renderOrdersTable(filtered);
+function holoBox(o) {
+  const items = (() => { try { return Array.isArray(o.items) ? o.items : JSON.parse(o.items || '[]'); } catch(e) { return []; } })();
+  const t = o.created_at ? new Date(o.created_at).toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'}) : '–';
+  return `<div class="holo-box">
+    <div class="holo-title">⬡ Orderdetaljer</div>
+    <div class="holo-r"><span class="holo-l">ID</span><span class="holo-v">${(o.id||'').slice(0,14)}</span></div>
+    <div class="holo-r"><span class="holo-l">Tid</span><span class="holo-v">${t}</span></div>
+    <hr class="holo-sep">
+    <div class="holo-r"><span class="holo-l">Kund</span><span class="holo-v">${o.customer_name||'–'}</span></div>
+    <div class="holo-r"><span class="holo-l">Tel</span><span class="holo-v">${o.customer_phone||'–'}</span></div>
+    <div class="holo-r"><span class="holo-l">Adress</span><span class="holo-v">${o.delivery_address||o.customer_address||o.address||'–'}</span></div>
+    <hr class="holo-sep">
+    <div class="holo-r"><span class="holo-l">Restaurang</span><span class="holo-v">${o.restaurant_name||'–'}</span></div>
+    <div class="holo-r"><span class="holo-l">Bud</span><span class="holo-v">${o.rider_name||'–'}</span></div>
+    <hr class="holo-sep">
+    <div class="holo-r"><span class="holo-l">Mat</span><span class="holo-v">${(o.subtotal||o.total_amount||o.total||0)} kr</span></div>
+    <div class="holo-r"><span class="holo-l">Leverans</span><span class="holo-v">${o.delivery_fee||0} kr</span></div>
+    <div class="holo-r"><span class="holo-l">Dricks</span><span class="holo-v">${o.tip||0} kr</span></div>
+    <div class="holo-r"><span class="holo-l">Totalt</span><span class="holo-v" style="color:var(--green)">${o.total_amount||o.total||0} kr</span></div>
+    <hr class="holo-sep">
+    <div class="holo-r"><span class="holo-l">Artiklar</span><span class="holo-v">${items.map(i=>`${i.qty||i.quantity||1}×${i.name}`).join(', ')||'–'}</span></div>
+  </div>`;
 }
 
-// ─── RENDER RESTAURANTS TABLE ────────────────────────────────
-function renderRestaurantsTable() {
-  const tbody = document.getElementById('restaurants-body');
-  if (!tbody) return;
-  tbody.innerHTML = allRestaurants.map(r => {
-    const holo = [
-      `RESTAURANG   ${r.name}`,
-      `─────────────────────────────`,
-      `Telefon      ${r.phone||'–'}`,
-      `Adress       ${r.address||'–'}`,
-      `Öppettider   ${r.opening_hours||'–'}`,
-      `Kategori     ${r.category||'–'}`,
-      `─────────────────────────────`,
-      `Status       ${r.is_open?'ÖPPEN':'STÄNGD'}`
-    ].join('\n');
-    return `<tr class="holo-trigger" data-holo="${escHolo(holo)}" onmousemove="setHoloPos(event)">
-      <td style="font-weight:700">${r.name}</td>
-      <td style="font-family:var(--mono);font-size:11px">${r.phone||'–'}</td>
-      <td style="font-size:11px">${r.address||'–'}</td>
-      <td style="font-family:var(--mono);font-size:11px">${r.opening_hours||'–'}</td>
-      <td>${r.is_open ? '<span class="badge badge-online">Öppen</span>' : '<span class="badge badge-offline">Stängd</span>'}</td>
-      <td style="font-family:var(--mono)">${allOrders.filter(o=>o.restaurant_name===r.name).length}</td>
-      <td><button class="btn btn-ghost btn-sm" onclick="toggleRestaurant('${r.id}',${!r.is_open})">${r.is_open?'Stäng':'Öppna'}</button></td>
-    </tr>`;
-  }).join('');
-}
-
-async function toggleRestaurant(id, isOpen) {
-  await SB.from('restaurants').update({ is_open: isOpen }).eq('id', id);
-  await loadRestaurants();
-  notify('Restaurang uppdaterad');
-}
-
-// ─── RENDER RIDERS TABLE ─────────────────────────────────────
-function renderRidersTable() {
-  const tbody = document.getElementById('riders-body');
-  if (!tbody) return;
-  tbody.innerHTML = allRiders.map(r => {
-    const holo = [
-      `BUD          ${r.name||'–'}`,
-      `─────────────────────────────`,
-      `Telefon      ${r.phone||'–'}`,
-      `Status       ${r.online?'ONLINE':'OFFLINE'}`,
-      `Position     ${r.lat&&r.lng?`${r.lat?.toFixed(4)}, ${r.lng?.toFixed(4)}`:'Ej tillgänglig'}`,
-      `─────────────────────────────`,
-      `Leveranser   ${r.deliveries||0}`
-    ].join('\n');
-    return `<tr class="holo-trigger" data-holo="${escHolo(holo)}" onmousemove="setHoloPos(event)">
-      <td style="font-weight:700">${r.name||'–'}</td>
-      <td style="font-family:var(--mono);font-size:11px">${r.email||'–'}</td>
-      <td style="font-family:var(--mono);font-size:11px">${r.phone||'–'}</td>
-      <td>${r.online ? '<span class="badge badge-online">Online</span>' : '<span class="badge badge-offline">Offline</span>'}</td>
-      <td style="font-family:var(--mono)">${r.deliveries||0}</td>
-      <td><button class="btn btn-red btn-sm" onclick="addToBlacklist('','${escAttr(r.email||'')}','Budkonto')">Blacklista</button></td>
-    </tr>`;
-  }).join('');
-}
-
-// ─── STATUS BADGE ────────────────────────────────────────────
-function statusBadge(st) {
-  const map = {new:'badge-new Ny',preparing:'badge-prep Tillagas',ready:'badge-ready Klar',picked:'badge-picked Hämtad',delivered:'badge-delivered Levererad'};
-  const parts = (map[st]||'badge-new Ny').split(' ');
-  return `<span class="badge ${parts[0]}">${parts.slice(1).join(' ')}</span>`;
-}
-
-// ─── CHARTS ──────────────────────────────────────────────────
-function buildDashCharts() {
-  const days = getLast7Days();
-  const revData = days.map(d => allOrders.filter(o=>o.created_at?.startsWith(d)&&o.status==='delivered').reduce((s,o)=>s+(o.total||0),0));
-  const ordData = days.map(d => allOrders.filter(o=>o.created_at?.startsWith(d)).length);
-  const labels = days.map(d => d.slice(5));
-  const cfg = (id, label, data, color) => {
-    const ctx = document.getElementById(id);
-    if (!ctx) return;
-    return new Chart(ctx, {
-      type: 'line',
-      data: { labels, datasets: [{ label, data, borderColor: color, backgroundColor: color+'22', tension: .4, fill: true, pointBackgroundColor: color }] },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
-        scales: { x: { ticks: { color: '#8888AA', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#ffffff08' } },
-          y: { ticks: { color: '#8888AA', font: { family: 'JetBrains Mono', size: 10 } }, grid: { color: '#ffffff08' } } } }
-    });
-  };
+function buildRevChart() {
+  const days = Array.from({length:7}, (_,i) => {
+    const d = new Date(); d.setDate(d.getDate() - 6 + i);
+    return d;
+  });
+  const labels = days.map(d => d.toLocaleDateString('sv-SE', {weekday:'short'}));
+  const data = days.map(d => {
+    const ds = d.toDateString();
+    return allOrders.filter(o => new Date(o.created_at).toDateString() === ds && o.status === 'delivered')
+      .reduce((s, o) => s + (o.total_amount || o.total || 0), 0);
+  });
+  const ctx = document.getElementById('chartRev');
+  if (!ctx) return;
   if (revChart) revChart.destroy();
-  if (ordChart) ordChart.destroy();
-  revChart = cfg('rev-chart', 'Intäkt (kr)', revData, '#00D4FF');
-  ordChart = cfg('ord-chart', 'Ordrar', ordData, '#7B2FFF');
-}
-
-function getLast7Days() {
-  return Array.from({length:7}, (_,i) => {
-    const d = new Date(); d.setDate(d.getDate()-6+i);
-    return d.toISOString().slice(0,10);
+  revChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [{ data, borderColor: '#00D4FF', backgroundColor: 'rgba(0,212,255,.08)', tension: .4, fill: true, pointBackgroundColor: '#00D4FF' }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+      scales: { x: { ticks: { color: '#9090B0', font: { family: 'JetBrains Mono', size: 9 } }, grid: { color: '#ffffff06' } },
+        y: { ticks: { color: '#9090B0', font: { family: 'JetBrains Mono', size: 9 } }, grid: { color: '#ffffff06' } } } }
   });
 }
 
-function getLast30Days() {
-  return Array.from({length:30}, (_,i) => {
-    const d = new Date(); d.setDate(d.getDate()-29+i);
-    return d.toISOString().slice(0,10);
-  });
+// ── ORDRAR PAGE ──────────────────────────────────────────────
+function renderOrdrarPage() {
+  document.getElementById('ordrarBody').innerHTML = allOrders.map(o => {
+    const t = o.created_at ? new Date(o.created_at).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'}) : '–';
+    return `<tr class="holo-row">
+      <td class="td-mono">${(o.id||'').slice(0,10)}</td>
+      <td class="td-name">${o.customer_name||'–'}</td>
+      <td style="font-family:var(--mono);font-size:11px">${o.customer_phone||'–'}</td>
+      <td>${o.restaurant_name||'–'}</td>
+      <td>${o.rider_name||'–'}</td>
+      <td style="font-family:var(--mono);color:var(--green)">${o.total_amount||o.total||0} kr</td>
+      <td>${statusPill(o.status)}</td>
+      ${holoBox(o)}
+    </tr>`;
+  }).join('');
 }
 
-// ─── RIDERS MAP ──────────────────────────────────────────────
-function initRidersMap() {
-  if (ridersMap) return;
-  ridersMap = L.map('riders-map').setView([58.753, 17.007], 12);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OSM' }).addTo(ridersMap);
-  updateRiderMarkers();
-}
-
-function updateRiderMarkers() {
-  if (!ridersMap) return;
-  allRiders.filter(r => r.lat && r.lng && r.online).forEach(r => {
-    const icon = L.divIcon({ html: '<div style="background:#00FF88;width:12px;height:12px;border-radius:50%;border:2px solid #000;box-shadow:0 0 10px #00FF88"></div>', className: '' });
-    if (riderMarkers[r.id]) {
-      riderMarkers[r.id].setLatLng([r.lat, r.lng]);
-    } else {
-      riderMarkers[r.id] = L.marker([r.lat, r.lng], { icon }).addTo(ridersMap).bindPopup(r.name || 'Bud');
-    }
-  });
-}
-
-// ─── ANALYTICS ───────────────────────────────────────────────
-async function loadAnalytics() {
-  document.getElementById('an-total').textContent = allOrders.length;
-  const totalRev = allOrders.filter(o=>o.status==='delivered').reduce((s,o)=>s+(o.total||0),0);
-  document.getElementById('an-rev').textContent = totalRev.toFixed(0)+' kr';
-  const avg = allOrders.length ? (totalRev / allOrders.filter(o=>o.status==='delivered').length || 0) : 0;
-  document.getElementById('an-avg').textContent = avg.toFixed(0)+' kr';
-  document.getElementById('an-dist').textContent = '–';
-
-  // Top restaurants
-  const restCounts = {};
-  allOrders.forEach(o => {
-    if (!restCounts[o.restaurant_name]) restCounts[o.restaurant_name] = { count: 0, rev: 0 };
-    restCounts[o.restaurant_name].count++;
-    restCounts[o.restaurant_name].rev += o.subtotal || 0;
-  });
-  const tbody = document.getElementById('top-rest-body');
-  if (tbody) {
-    tbody.innerHTML = Object.entries(restCounts).sort((a,b)=>b[1].count-a[1].count).slice(0,10).map(([name,d]) =>
-      `<tr><td>${name}</td><td style="font-family:var(--mono)">${d.count}</td><td style="font-family:var(--mono)">${d.rev.toFixed(0)} kr</td></tr>`
-    ).join('');
-  }
-
-  // 30-day revenue chart
-  const days30 = getLast30Days();
-  const rev30 = days30.map(d => allOrders.filter(o=>o.created_at?.startsWith(d)&&o.status==='delivered').reduce((s,o)=>s+(o.total||0),0));
-  const ctx1 = document.getElementById('an-rev-chart');
-  if (ctx1) {
-    if (anRevChart) anRevChart.destroy();
-    anRevChart = new Chart(ctx1, {
-      type:'bar', data:{ labels:days30.map(d=>d.slice(5)), datasets:[{label:'Intäkt',data:rev30,backgroundColor:'#00D4FF44',borderColor:'#00D4FF',borderWidth:1}] },
-      options:{ responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#8888AA',font:{family:'JetBrains Mono',size:9}},grid:{display:false}},y:{ticks:{color:'#8888AA',font:{family:'JetBrains Mono',size:9}},grid:{color:'#ffffff08'}}}}
-    });
-  }
-
-  // Status pie
-  const statusCounts = {};
-  allOrders.forEach(o => { statusCounts[o.status] = (statusCounts[o.status]||0)+1; });
-  const ctx2 = document.getElementById('an-status-chart');
-  if (ctx2) {
-    if (anStatusChart) anStatusChart.destroy();
-    anStatusChart = new Chart(ctx2, {
-      type:'doughnut',
-      data:{ labels:Object.keys(statusCounts), datasets:[{data:Object.values(statusCounts),backgroundColor:['#FF8C00','#00D4FF','#7B2FFF','#00FF88','#444466'],borderWidth:0}] },
-      options:{ responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#E8E8F0',font:{family:'JetBrains Mono',size:10}}}} }
-    });
-  }
-}
-
-// ─── SETTINGS SAVE ───────────────────────────────────────────
-async function saveSettings() {
-  const base = document.getElementById('set-base').value;
-  const km = document.getElementById('set-km').value;
-  await SB.from('settings').upsert([{key:'delivery_base_fee',value:base},{key:'delivery_per_km',value:km}],{onConflict:'key'});
-  notify('✓ Inställningar sparade');
-}
-
-// ─── ACCOUNTS ────────────────────────────────────────────────
-async function loadAccounts() {
-  const { data } = await SB.from('profiles').select('*').order('created_at', { ascending: false });
-  const tbody = document.getElementById('accounts-body');
-  if (!tbody || !data) return;
-  tbody.innerHTML = data.map(p => `
+// ── RESTAURANGER PAGE ────────────────────────────────────────
+function renderRestaurangerPage() {
+  document.getElementById('restBody').innerHTML = allRests.map(r => `
     <tr>
-      <td>${p.name||'–'}</td>
-      <td style="font-family:var(--mono);font-size:11px">${p.email||'–'}</td>
-      <td><span class="badge ${p.role==='admin'?'badge-picked':p.role==='restaurant'?'badge-prep':'badge-new'}">${p.role}</span></td>
-      <td style="font-family:var(--mono);font-size:10px">${p.created_at?p.created_at.slice(0,10):'–'}</td>
+      <td class="td-name">${r.name||'–'}</td>
+      <td style="font-family:var(--mono);font-size:11px">${r.email||'–'}</td>
+      <td>${r.phone||'–'}</td>
+      <td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${r.address||'–'}</td>
+      <td><span class="pill ${r.is_open?'pill-on':'pill-off'}">${r.is_open?'ÖPPEN':'STÄNGD'}</span></td>
+      <td><div class="act-btns">
+        <button class="btn-edit" onclick="openRestModal('${r.id}')">✏️ Redigera</button>
+        <button class="btn-del" onclick="confirmDelete('restaurant','${r.id}','${(r.name||'').replace(/'/g,"\\'")}')">🗑️</button>
+      </div></td>
     </tr>`).join('');
 }
 
-function updateAccountForm() {
-  const role = document.getElementById('new-role').value;
-  document.getElementById('rest-assign-group').style.display = role === 'restaurant' ? 'block' : 'none';
+// ── BUD PAGE ─────────────────────────────────────────────────
+function renderBudPage() {
+  document.getElementById('budBody').innerHTML = allRiders.map(r => `
+    <tr>
+      <td class="td-name">${r.name||'–'}</td>
+      <td style="font-family:var(--mono);font-size:11px">${r.email||'–'}</td>
+      <td>${r.phone||'–'}</td>
+      <td><span class="pill ${r.status==='online'?'pill-on':'pill-off'}">${(r.status||'offline').toUpperCase()}</span></td>
+      <td style="font-family:var(--mono);color:var(--green)">${allOrders.filter(o=>o.rider_id===r.id&&o.status==='delivered').length}</td>
+      <td><div class="act-btns">
+        <button class="btn-edit" onclick="openBudModal('${r.id}')">✏️ Redigera</button>
+        <button class="btn-del" onclick="confirmDelete('rider','${r.id}','${(r.name||'').replace(/'/g,"\\'")}')">🗑️</button>
+      </div></td>
+    </tr>`).join('');
 }
 
-async function createAccount() {
-  const role = document.getElementById('new-role').value;
-  const name = document.getElementById('new-name').value.trim();
-  const email = document.getElementById('new-email').value.trim();
-  const pass = document.getElementById('new-pass').value;
-  const phone = document.getElementById('new-phone').value.trim();
-  const restId = document.getElementById('new-rest-assign').value;
-  const res = document.getElementById('create-result');
-  if (!name || !email || !pass) { res.style.color='var(--red)'; res.textContent='⚠ Fyll i alla obligatoriska fält.'; return; }
-
-  // Create via Supabase Auth admin API (needs service role - use Edge Function ideally)
-  // For now, use anon signUp and set profile
-  const { data, error } = await SB.auth.signUp({ email, password: pass, options: { data: { name } } });
-  if (error) { res.style.color='var(--red)'; res.textContent='Fel: '+error.message; return; }
-  if (data.user) {
-    await SB.from('profiles').upsert({ id: data.user.id, role, name, email, phone }, { onConflict: 'id' });
-    if (role === 'restaurant' && restId) {
-      await SB.from('restaurants').update({ owner_id: data.user.id }).eq('id', restId);
-    }
-    if (role === 'rider') {
-      await SB.from('riders').insert({ user_id: data.user.id, name, email, phone, online: false, deliveries: 0 });
-    }
-    res.style.color='var(--green)'; res.textContent='✓ Konto skapat: '+email;
-    loadAccounts();
-    notify('Konto skapat för '+name);
-    document.getElementById('new-name').value='';
-    document.getElementById('new-email').value='';
-    document.getElementById('new-pass').value='';
-    document.getElementById('new-phone').value='';
-  }
-}
-
-// ─── BLACKLIST ───────────────────────────────────────────────
-async function loadBlacklist() {
-  const { data } = await SB.from('blacklist').select('*').order('created_at', { ascending: false });
-  const tbody = document.getElementById('blacklist-body');
-  if (!tbody || !data) return;
-  tbody.innerHTML = data.length === 0 ? '<tr><td colspan="4" style="text-align:center;color:var(--text2)">Ingen blacklist ännu</td></tr>' :
-    data.map(b => `
-      <tr>
-        <td style="font-family:var(--mono)">${b.email||'–'}</td>
-        <td>${b.reason||'–'}</td>
-        <td style="font-family:var(--mono);font-size:10px">${b.created_at?.slice(0,10)||'–'}</td>
-        <td><button class="btn btn-ghost btn-sm" onclick="removeBlacklist('${b.id}')">Ta bort</button></td>
-      </tr>`).join('');
-}
-
-async function addToBlacklist(userId, email, reason) {
-  const r = reason || prompt('Anledning för blacklist:');
-  if (!r) return;
-  await SB.from('blacklist').insert({ user_id: userId||null, email, reason: r, created_by: currentUser?.id });
-  loadBlacklist();
-  notify('Blacklistad: '+email);
-}
-
-async function removeBlacklist(id) {
-  await SB.from('blacklist').delete().eq('id', id);
-  loadBlacklist();
-  notify('Borttagen från blacklist');
-}
-
-function openAddBlacklist() {
-  const email = prompt('E-post att blacklista:');
-  if (!email) return;
-  const reason = prompt('Anledning:');
-  if (!reason) return;
-  addToBlacklist('', email, reason);
-}
-
-// ─── CHAT ────────────────────────────────────────────────────
-async function openChat(orderId, orderNum) {
-  currentChatOrderId = orderId;
-  document.getElementById('chat-modal-title').textContent = 'Order #' + orderNum;
-  document.getElementById('chat-modal-msgs').innerHTML = '<div style="color:var(--text2);font-size:12px;text-align:center;padding:20px;font-family:var(--mono)">Laddar...</div>';
-  document.getElementById('chat-modal').classList.add('open');
-  await loadChatMsgs(orderId, 'chat-modal-msgs');
-  subscribeChat(orderId, 'chat-modal-msgs');
-}
-
-function closeChatModal() {
-  document.getElementById('chat-modal').classList.remove('open');
-  currentChatOrderId = null;
-}
-
-async function loadChatMsgs(orderId, containerId) {
-  const { data } = await SB.from('chats').select('*').eq('order_id', orderId).order('created_at');
-  renderChatMsgs(data || [], containerId);
-}
-
-function renderChatMsgs(msgs, containerId) {
-  const el = document.getElementById(containerId);
-  if (!el) return;
-  if (msgs.length === 0) { el.innerHTML = '<div style="color:var(--text2);font-size:12px;text-align:center;padding:20px;font-family:var(--mono)">Inga meddelanden ännu.</div>'; return; }
-  el.innerHTML = msgs.map(m => `
-    <div class="msg ${m.sender_role==='admin'?'admin':'other'}">
-      <div class="msg-sender">${m.sender_name||m.sender_role} · ${new Date(m.created_at).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</div>
-      ${m.message}
-    </div>`).join('');
-  el.scrollTop = el.scrollHeight;
-}
-
-async function sendChatFromModal() {
-  if (!currentChatOrderId) return;
-  const inp = document.getElementById('chat-modal-inp');
-  const msg = inp.value.trim();
-  if (!msg) return;
-  inp.value = '';
-  await SB.from('chats').insert({ order_id: currentChatOrderId, sender_role: 'admin', sender_name: 'Admin', message: msg, sender_id: currentUser?.id });
-  await loadChatMsgs(currentChatOrderId, 'chat-modal-msgs');
-}
-
-async function sendAdminMsg() {
-  if (!currentConvOrderId) return;
-  const inp = document.getElementById('admin-msg-inp');
-  const msg = inp.value.trim();
-  if (!msg) return;
-  inp.value = '';
-  await SB.from('chats').insert({ order_id: currentConvOrderId, sender_role: 'admin', sender_name: 'Admin', message: msg, sender_id: currentUser?.id });
-  await loadChatMsgs(currentConvOrderId, 'conv-msgs');
-}
-
-function subscribeChat(orderId, containerId) {
-  SB.channel('chat-' + orderId)
-    .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chats', filter: 'order_id=eq.' + orderId },
-      () => loadChatMsgs(orderId, containerId))
-    .subscribe();
-}
-
-// ─── CONVERSATIONS PAGE ──────────────────────────────────────
-async function loadConversations() {
-  const { data } = await SB.from('chats').select('order_id, message, sender_name, sender_role, created_at').order('created_at', { ascending: false });
-  if (!data) return;
-  // Group by order_id
-  const grouped = {};
-  data.forEach(m => {
-    if (!grouped[m.order_id]) grouped[m.order_id] = { order_id: m.order_id, last_message: m.message, last_sender: m.sender_name, last_time: m.created_at, count: 0 };
-    grouped[m.order_id].count++;
+// ── KUNDER PAGE ──────────────────────────────────────────────
+async function renderKunderPage() {
+  const { data: orders } = await SB.from('orders').select('customer_name,customer_phone,delivery_address,customer_address,total_amount,total,created_at').order('created_at', { ascending: false });
+  const { data: bl } = await SB.from('blacklist').select('customer_phone');
+  const blPhones = new Set((bl||[]).map(b => b.customer_phone));
+  const map = {};
+  (orders||[]).forEach(o => {
+    const key = o.customer_phone || o.customer_name || 'okänd';
+    if (!map[key]) map[key] = { name: o.customer_name, phone: o.customer_phone,
+      address: o.delivery_address || o.customer_address, total: 0, count: 0, last: o.created_at };
+    map[key].total += (o.total_amount || o.total || 0);
+    map[key].count++;
+    if (o.created_at > map[key].last) map[key].last = o.created_at;
   });
-  const el = document.getElementById('conv-list');
-  if (!el) return;
-  const entries = Object.values(grouped).slice(0, 20);
-  el.innerHTML = entries.length === 0 ? '<div style="color:var(--text2);font-size:12px;font-family:var(--mono)">Inga konversationer ännu.</div>' :
-    entries.map(g => `
-      <div class="chat-item" onclick="openConvDetail('${g.order_id}')">
-        <div class="chat-item-header">
-          <div class="chat-item-title">Order ${g.order_id?.slice(0,8)}</div>
-          <div class="chat-item-time">${new Date(g.last_time).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</div>
-        </div>
-        <div class="chat-item-preview">${g.last_sender||'?'}: ${(g.last_message||'').slice(0,50)}...</div>
-      </div>`).join('');
+  allKunder = Object.values(map).sort((a, b) => b.count - a.count);
+  document.getElementById('kundBody').innerHTML = allKunder.map(c => {
+    const isB = blPhones.has(c.phone);
+    const d = c.last ? new Date(c.last).toLocaleDateString('sv-SE',{day:'numeric',month:'short'}) : '–';
+    return `<tr>
+      <td class="td-name">${c.name||'–'}</td>
+      <td style="font-family:var(--mono)">${c.phone||'–'}</td>
+      <td style="font-size:11px;max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.address||'–'}</td>
+      <td style="font-family:var(--mono);color:var(--cyan)">${c.count}</td>
+      <td style="font-family:var(--mono);color:var(--green)">${c.total} kr</td>
+      <td style="color:var(--text2)">${d}</td>
+      <td><div class="act-btns">
+        <button class="btn-edit" onclick="openKundModal(${JSON.stringify(c).replace(/"/g,'&quot;')})">✏️</button>
+        <button class="btn-bl" onclick="toggleBlacklist('${c.phone||''}','${(c.name||'').replace(/'/g,"\\'")}',${isB})">${isB?'✅ Avblockera':'🚫 Blockera'}</button>
+      </div></td>
+    </tr>`;
+  }).join('');
 }
 
-async function openConvDetail(orderId) {
-  currentConvOrderId = orderId;
-  document.getElementById('conv-detail-title').textContent = 'Order ' + orderId.slice(0,8);
-  await loadChatMsgs(orderId, 'conv-msgs');
-  subscribeChat(orderId, 'conv-msgs');
+// ── KARTA PAGE ───────────────────────────────────────────────
+function renderKartaPage() {
+  setTimeout(() => {
+    if (!adminMap) {
+      adminMap = L.map('adminMap').setView([58.7521, 17.0053], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(adminMap);
+      document.getElementById('adminMap').style.filter = 'invert(90%) hue-rotate(180deg) brightness(.85)';
+    } else {
+      adminMap.invalidateSize();
+    }
+    updateMapMarkers();
+  }, 100);
 }
 
-function closeConvDetail() {
-  currentConvOrderId = null;
-  document.getElementById('conv-detail-title').textContent = 'Välj en konversation';
-  document.getElementById('conv-msgs').innerHTML = '';
+function updateMapMarkers() {
+  if (!adminMap) return;
+  allRiders.forEach(r => {
+    if (!r.lat || !r.lng) return;
+    const icon = L.divIcon({ html: `<div style="background:${r.status==='online'?'#00FF9D':'#5a5a7a'};width:11px;height:11px;border-radius:50%;border:2px solid #000;box-shadow:0 0 8px ${r.status==='online'?'#00FF9D':'transparent'}"></div>`, iconSize:[11,11], iconAnchor:[5,5], className:'' });
+    if (riderMarkers[r.id]) riderMarkers[r.id].setLatLng([r.lat, r.lng]);
+    else riderMarkers[r.id] = L.marker([r.lat, r.lng], { icon }).addTo(adminMap).bindPopup(`🛵 ${r.name||'Bud'}`);
+  });
 }
 
-// ─── MENU MANAGEMENT ─────────────────────────────────────────
-function populateMenuRestaurantFilter() {
-  const sel = document.getElementById('menu-rest-filter');
-  if (!sel) return;
-  sel.innerHTML = '<option value="">Välj restaurang...</option>' +
-    allRestaurants.map(r => `<option value="${r.id}">${r.name}</option>`).join('');
-}
-
-async function loadMenuItems() {
-  const restId = document.getElementById('menu-rest-filter').value;
-  const grid = document.getElementById('menu-grid');
-  if (!restId) { grid.innerHTML = '<div style="color:var(--text2);font-size:12px;font-family:var(--mono)">Välj en restaurang ovan.</div>'; return; }
-  const { data } = await SB.from('menu_items').select('*').eq('restaurant_id', restId).order('name');
-  grid.innerHTML = (data||[]).map(item => `
-    <div class="menu-card">
-      <div class="menu-card-name">${item.name}</div>
-      <div class="menu-card-meta">${item.category||'–'} · ${(item.price||0)} kr</div>
-      ${item.description ? `<div style="font-size:11px;color:var(--text2);margin-top:4px">${item.description}</div>` : ''}
-      ${item.allergens ? `<div style="font-size:10px;color:var(--orange);margin-top:3px;font-family:var(--mono)">⚠ ${item.allergens}</div>` : ''}
-      <div class="menu-card-actions">
-        <span class="badge ${item.available?'badge-online':'badge-offline'}">${item.available?'Tillgänglig':'Otillgänglig'}</span>
-        <button class="btn btn-ghost btn-sm" onclick="toggleMenuItem('${item.id}',${!item.available})">${item.available?'Inaktivera':'Aktivera'}</button>
-        <button class="btn btn-red btn-sm" onclick="deleteMenuItem('${item.id}')">✕</button>
+// ── KONVERSATIONER ───────────────────────────────────────────
+async function renderKonvPage() {
+  const { data } = await SB.from('chats').select('*').order('created_at', { ascending: false }).limit(300);
+  const groups = {};
+  (data||[]).forEach(m => {
+    if (!groups[m.order_id]) groups[m.order_id] = [];
+    groups[m.order_id].push(m);
+  });
+  const el = document.getElementById('konvList');
+  const entries = Object.entries(groups);
+  if (!entries.length) { el.innerHTML = '<div style="color:var(--text3);font-family:var(--mono);font-size:13px;text-align:center;padding:40px">Inga konversationer ännu</div>'; return; }
+  el.innerHTML = entries.map(([orderId, msgs]) => {
+    const last = msgs[0];
+    const t = new Date(last.created_at).toLocaleString('sv-SE',{hour:'2-digit',minute:'2-digit',day:'numeric',month:'short'});
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:11px;padding:14px;cursor:pointer" onclick="this.querySelector('.konv-expand').style.display=this.querySelector('.konv-expand').style.display==='none'?'block':'none'">
+      <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+        <span style="font-family:var(--mono);font-size:11px;color:var(--cyan)">${orderId.slice(0,12)}</span>
+        <span style="font-size:11px;color:var(--text3);font-family:var(--mono)">${t}</span>
       </div>
-    </div>`).join('') || '<div style="color:var(--text2);font-size:12px;font-family:var(--mono)">Inga rätter hittades.</div>';
+      <div style="font-size:13px;color:var(--text2)">${last.sender_role}: ${(last.message||'').slice(0,80)}${last.message?.length>80?'...':''}</div>
+      <div class="konv-expand" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">
+        ${msgs.slice().reverse().map(m => `<div style="margin-bottom:8px"><span style="font-size:9px;color:var(--text3);font-family:var(--mono)">${m.sender_role} · ${new Date(m.created_at).toLocaleTimeString('sv-SE',{hour:'2-digit',minute:'2-digit'})}</span><div style="font-size:12px;color:var(--text);margin-top:2px">${m.message}</div></div>`).join('')}
+      </div>
+    </div>`;
+  }).join('');
 }
 
-async function toggleMenuItem(id, available) {
-  await SB.from('menu_items').update({ available }).eq('id', id);
-  loadMenuItems();
+// ── CRUD: RESTAURANT ─────────────────────────────────────────
+async function openRestModal(id) {
+  editingId = id || null;
+  editingType = 'restaurant';
+  document.getElementById('restModalTitle').textContent = id ? 'Redigera restaurang' : 'Ny restaurang';
+  document.getElementById('restDelBtn').style.display = id ? 'inline-block' : 'none';
+  ['rNamn','rKok','rEmail','rPass','rTel','rStad','rAdress','rTimmar'].forEach(i => { const el = document.getElementById(i); if (el) el.value = ''; });
+  if (id) {
+    const { data: r } = await SB.from('restaurants').select('*').eq('id', id).maybeSingle();
+    if (r) {
+      document.getElementById('rNamn').value = r.name || '';
+      document.getElementById('rKok').value = r.cuisine || r.category || '';
+      document.getElementById('rEmail').value = r.email || '';
+      document.getElementById('rTel').value = r.phone || '';
+      document.getElementById('rStad').value = r.city || '';
+      document.getElementById('rAdress').value = r.address || '';
+      document.getElementById('rTimmar').value = r.opening_hours || '';
+    }
+  }
+  openModal('modalRest');
 }
 
-async function deleteMenuItem(id) {
-  if (!confirm('Ta bort rätt?')) return;
-  await SB.from('menu_items').delete().eq('id', id);
-  loadMenuItems();
-  notify('Rätt borttagen');
+async function saveRestaurant() {
+  const name = document.getElementById('rNamn').value.trim();
+  const email = document.getElementById('rEmail').value.trim();
+  const pass  = document.getElementById('rPass').value.trim();
+  if (!name) { toast('❌ Namn krävs', true); return; }
+  const payload = { name, cuisine: document.getElementById('rKok').value.trim(), email,
+    phone: document.getElementById('rTel').value.trim(), city: document.getElementById('rStad').value.trim(),
+    address: document.getElementById('rAdress').value.trim(), opening_hours: document.getElementById('rTimmar').value.trim() };
+  if (editingId) {
+    const { error } = await SB.from('restaurants').update(payload).eq('id', editingId);
+    if (error) { toast('❌ ' + error.message, true); return; }
+    toast('✅ Restaurang uppdaterad');
+  } else {
+    if (!email || !pass) { toast('❌ E-post och lösenord krävs', true); return; }
+    const { data: newRest, error: rErr } = await SB.from('restaurants').insert(payload).select().maybeSingle();
+    if (rErr) { toast('❌ ' + rErr.message, true); return; }
+    const { data: authData, error: aErr } = await SB.auth.signUp({ email, password: pass });
+    if (!aErr && authData.user) {
+      await SB.from('restaurants').update({ auth_user_id: authData.user.id, email }).eq('id', newRest.id);
+      await SB.from('profiles').upsert({ id: authData.user.id, role: 'restaurant', name, email });
+    }
+    toast('✅ Restaurang skapad' + (aErr ? ' (konto ej skapat: ' + aErr.message + ')' : ' med konto'));
+  }
+  closeModal('modalRest');
+  await loadRests();
+  renderRestaurangerPage();
 }
 
-function openAddMenuItem() {
-  const restId = document.getElementById('menu-rest-filter').value;
-  if (!restId) { notify('Välj en restaurang först'); return; }
-  const name = prompt('Namn på rätt:');
-  if (!name) return;
-  const price = prompt('Pris (kr):');
-  const cat = prompt('Kategori (t.ex. Förrätt, Huvudrätt):') || 'Main';
-  const desc = prompt('Beskrivning (valfritt):') || '';
-  const allergens = prompt('Allergener (valfritt):') || '';
-  SB.from('menu_items').insert({ restaurant_id: restId, name, price: parseFloat(price)||0, category: cat, description: desc, allergens, available: true }).then(() => { loadMenuItems(); notify('Rätt tillagd'); });
+// ── CRUD: BUD ────────────────────────────────────────────────
+async function openBudModal(id) {
+  editingId = id || null;
+  editingType = 'rider';
+  document.getElementById('budModalTitle').textContent = id ? 'Redigera bud' : 'Nytt bud';
+  document.getElementById('budDelBtn').style.display = id ? 'inline-block' : 'none';
+  ['dNamn','dEmail','dPass','dTel','dAdress','dStad'].forEach(i => { const el = document.getElementById(i); if (el) el.value = ''; });
+  if (id) {
+    const { data: r } = await SB.from('riders').select('*').eq('id', id).maybeSingle();
+    if (r) {
+      document.getElementById('dNamn').value = r.name || '';
+      document.getElementById('dEmail').value = r.email || '';
+      document.getElementById('dTel').value = r.phone || '';
+      document.getElementById('dAdress').value = r.address || '';
+      document.getElementById('dStad').value = r.city || '';
+    }
+  }
+  openModal('modalBud');
 }
 
-// ─── POPULATE SELECTS ────────────────────────────────────────
-function populateRestaurantSelects() {
-  const sel = document.getElementById('new-rest-assign');
-  if (sel) sel.innerHTML = '<option value="">Välj restaurang...</option>' + allRestaurants.map(r=>`<option value="${r.id}">${r.name}</option>`).join('');
+async function saveBud() {
+  const name = document.getElementById('dNamn').value.trim();
+  const email = document.getElementById('dEmail').value.trim();
+  const pass  = document.getElementById('dPass').value.trim();
+  if (!name) { toast('❌ Namn krävs', true); return; }
+  const payload = { name, email, phone: document.getElementById('dTel').value.trim(),
+    address: document.getElementById('dAdress').value.trim(), city: document.getElementById('dStad').value.trim() };
+  if (editingId) {
+    const { error } = await SB.from('riders').update(payload).eq('id', editingId);
+    if (error) { toast('❌ ' + error.message, true); return; }
+    toast('✅ Bud uppdaterat');
+  } else {
+    if (!email || !pass) { toast('❌ E-post och lösenord krävs', true); return; }
+    const { data: newRider, error: rErr } = await SB.from('riders').insert({ ...payload, status: 'offline' }).select().maybeSingle();
+    if (rErr) { toast('❌ ' + rErr.message, true); return; }
+    const { data: authData, error: aErr } = await SB.auth.signUp({ email, password: pass });
+    if (!aErr && authData.user) {
+      await SB.from('riders').update({ auth_user_id: authData.user.id, email }).eq('id', newRider.id);
+      await SB.from('profiles').upsert({ id: authData.user.id, role: 'rider', name, email });
+    }
+    toast('✅ Bud skapat' + (aErr ? ' (konto ej skapat: ' + aErr.message + ')' : ' med konto'));
+  }
+  closeModal('modalBud');
+  await loadRiders();
+  renderBudPage();
 }
 
-// ─── EXPORT CSV ──────────────────────────────────────────────
+// ── CRUD: KUND ───────────────────────────────────────────────
+function openKundModal(c) {
+  editingType = 'customer';
+  document.getElementById('kundModalTitle').textContent = c ? 'Redigera kund' : 'Ny kund';
+  document.getElementById('cNamn').value = c?.name || '';
+  document.getElementById('cTel').value = c?.phone || '';
+  document.getElementById('cEmail').value = c?.email || '';
+  document.getElementById('cStad').value = c?.city || 'Nyköping';
+  document.getElementById('cAdress').value = c?.address || '';
+  document.getElementById('cStatus').value = 'aktiv';
+  document.getElementById('cAnledning').value = '';
+  window._editPhone = c?.phone || null;
+  openModal('modalKund');
+}
+
+async function saveKund() {
+  const name = document.getElementById('cNamn').value.trim();
+  const phone = document.getElementById('cTel').value.trim();
+  const isBlack = document.getElementById('cStatus').value === 'blacklist';
+  const reason = document.getElementById('cAnledning').value.trim();
+  if (window._editPhone) {
+    await SB.from('orders').update({ customer_name: name, customer_phone: phone }).eq('customer_phone', window._editPhone);
+  }
+  if (isBlack && phone) {
+    await SB.from('blacklist').upsert({ customer_phone: phone, reason }, { onConflict: 'customer_phone' }).catch(() =>
+      SB.from('blacklist').insert({ customer_phone: phone, reason }));
+    toast('🚫 Kund blacklistad');
+  } else if (!isBlack && phone) {
+    await SB.from('blacklist').delete().eq('customer_phone', phone);
+  }
+  toast('✅ Kund uppdaterad');
+  closeModal('modalKund');
+  renderKunderPage();
+}
+
+async function toggleBlacklist(phone, name, isCurrentlyBlack) {
+  if (isCurrentlyBlack) {
+    await SB.from('blacklist').delete().eq('customer_phone', phone);
+    toast('✅ ' + name + ' avblockerad');
+  } else {
+    await SB.from('blacklist').insert({ customer_phone: phone, reason: 'Manuellt av admin' }).catch(() =>
+      SB.from('blacklist').upsert({ customer_phone: phone, reason: 'Manuellt av admin' }, { onConflict: 'customer_phone' }));
+    toast('🚫 ' + name + ' blacklistad');
+  }
+  renderKunderPage();
+}
+
+// ── DELETE ───────────────────────────────────────────────────
+function confirmDelete(type, id, name) {
+  document.getElementById('confirmTitle').textContent = 'Ta bort ' + (type === 'restaurant' ? 'restaurang' : 'bud');
+  document.getElementById('confirmMsg').textContent = `Ta bort "${name}"? Kan inte ångras.`;
+  document.getElementById('confirmOk').onclick = () => performDelete(type, id);
+  openModal('modalConfirm');
+}
+async function performDelete(type, id) {
+  closeModal('modalConfirm');
+  const table = type === 'restaurant' ? 'restaurants' : 'riders';
+  const { error } = await SB.from(table).delete().eq('id', id);
+  if (error) { toast('❌ ' + error.message, true); return; }
+  toast('🗑️ Borttagen');
+  if (type === 'restaurant') { await loadRests(); renderRestaurangerPage(); }
+  else { await loadRiders(); renderBudPage(); }
+}
+async function deleteEntity(type) {
+  closeModal(type === 'restaurant' ? 'modalRest' : 'modalBud');
+  if (editingId) confirmDelete(type, editingId, '');
+}
+
+// ── SETTINGS ─────────────────────────────────────────────────
+async function saveSettings() {
+  const fee = document.getElementById('sFee').value;
+  const km  = document.getElementById('sKm').value;
+  await SB.from('settings').upsert([{ key: 'delivery_base_fee', value: fee }, { key: 'delivery_per_km', value: km }], { onConflict: 'key' });
+  toast('✅ Inställningar sparade');
+}
+
+// ── CSV EXPORT ───────────────────────────────────────────────
 function exportCSV() {
-  const headers = ['order_number','customer_name','customer_phone','customer_address','restaurant_name','rider_name','subtotal','delivery_fee','tip','total','status','created_at'];
+  const headers = ['id','customer_name','customer_phone','delivery_address','restaurant_name','rider_name','total_amount','delivery_fee','tip','status','created_at'];
   const rows = allOrders.map(o => headers.map(h => JSON.stringify(o[h]||'')).join(','));
   const csv = [headers.join(','), ...rows].join('\n');
-  const blob = new Blob([csv], { type: 'text/csv' });
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'atlas-orders-'+new Date().toISOString().slice(0,10)+'.csv'; a.click();
-  notify('CSV exporterat');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+  a.download = 'atlas-orders-' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+  toast('✅ CSV exporterat');
 }
 
-// ─── REALTIME ────────────────────────────────────────────────
-function subscribeRealtime() {
-  SB.channel('admin-live')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'orders' }, () => { loadOrders().then(() => { updateKPIs(); buildDashCharts(); }); })
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'riders' }, () => { loadRiders().then(() => { updateRiderMarkers(); updateKPIs(); }); })
-    .subscribe();
-}
-
-// ─── HOLOGRAM POSITION ───────────────────────────────────────
-function setHoloPos(e) {
-  e.currentTarget.style.setProperty('--x', e.clientX + 'px');
-  e.currentTarget.style.setProperty('--y', e.clientY + 'px');
-}
-
-// ─── HELPERS ─────────────────────────────────────────────────
-function escHolo(str) { return str.replace(/"/g, '&quot;').replace(/'/g,'&#39;'); }
-function escAttr(str) { return (str||'').replace(/'/g,'&#39;'); }
-
-function notify(msg) {
-  const el = document.getElementById('notif');
-  el.textContent = msg; el.classList.add('show');
-  setTimeout(() => el.classList.remove('show'), 3200);
-}
-
-// ─── AUTH CHECK ON LOAD ──────────────────────────────────────
-(async () => {
-  const { data } = await SB.auth.getSession();
-// ─── KUNDER ──────────────────────────────────────────────
-let allCustomers = [];
-
-async function loadCustomers() {
-  document.getElementById('customers-body').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text2);font-family:var(--mono)">Laddar...</td></tr>';
-
-  // Get all delivered/picked orders with customer info
-  const { data: orders } = await SB.from('orders')
-    .select('customer_name,customer_phone,customer_address,delivery_address,total,subtotal,created_at,status')
-    .order('created_at', { ascending: false });
-
-  if (!orders) { document.getElementById('customers-body').innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text2)">Ingen data</td></tr>'; return; }
-
-  // Aggregate by phone (best unique key we have without auth user link)
-  const map = {};
-  orders.forEach(o => {
-    const key = (o.customer_phone || '').trim() || (o.customer_name || '').trim().toLowerCase();
-    if (!key) return;
-    if (!map[key]) {
-      map[key] = {
-        name: o.customer_name || '–',
-        phone: o.customer_phone || '–',
-        address: o.customer_address || o.delivery_address || '–',
-        orders: 0,
-        spent: 0,
-        lastOrder: o.created_at
-      };
-    }
-    map[key].orders++;
-    map[key].spent += (o.total || 0);
-    if (o.created_at > map[key].lastOrder) {
-      map[key].lastOrder = o.created_at;
-      map[key].address = o.customer_address || o.delivery_address || map[key].address;
-    }
+// ── UTILS ────────────────────────────────────────────────────
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function filterTbl(inp, tbodyId) {
+  const q = inp.value.toLowerCase();
+  document.getElementById(tbodyId)?.querySelectorAll('tr').forEach(r => {
+    r.style.display = r.textContent.toLowerCase().includes(q) ? '' : 'none';
   });
-
-  allCustomers = Object.values(map).sort((a, b) => b.orders - a.orders);
-  document.getElementById('cust-count').textContent = allCustomers.length + ' kunder';
-  renderCustomersTable(allCustomers);
 }
-
-function filterCustomers() {
-  const q = (document.getElementById('cust-search')?.value || '').toLowerCase();
-  const filtered = q ? allCustomers.filter(c =>
-    c.name.toLowerCase().includes(q) ||
-    c.phone.toLowerCase().includes(q) ||
-    c.address.toLowerCase().includes(q)
-  ) : allCustomers;
-  document.getElementById('cust-count').textContent = filtered.length + ' kunder';
-  renderCustomersTable(filtered);
+function toast(msg, isErr) {
+  const el = document.createElement('div');
+  el.className = 'toast' + (isErr ? ' err' : '');
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3500);
 }
+document.querySelectorAll('.modal-bg').forEach(bg => bg.addEventListener('click', e => { if (e.target === bg) bg.classList.remove('open'); }));
 
-function renderCustomersTable(list) {
-  const tbody = document.getElementById('customers-body');
-  if (!list.length) {
-    tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;padding:24px;color:var(--text2);font-family:var(--mono)">Inga kunder hittades</td></tr>';
-    return;
-  }
-  tbody.innerHTML = list.map(c => {
-    const ts = c.lastOrder ? new Date(c.lastOrder).toLocaleDateString('sv-SE') : '–';
-    const isBlacklisted = allOrders?.some ? false : false; // placeholder
-    return `<tr>
-      <td style="font-weight:600">${escAttr(c.name)}</td>
-      <td style="font-family:var(--mono);font-size:11px;color:var(--text2)">–</td>
-      <td style="font-family:var(--mono);font-size:11px">${escAttr(c.phone)}</td>
-      <td style="font-size:11px;max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escAttr(c.address)}">${escAttr(c.address)}</td>
-      <td style="font-family:var(--mono);text-align:center"><span style="background:rgba(0,229,255,.1);border:1px solid rgba(0,229,255,.2);border-radius:6px;padding:2px 8px;color:var(--cyan);font-size:11px">${c.orders}</span></td>
-      <td style="font-family:var(--mono);color:var(--green)">${c.spent.toFixed(0)} kr</td>
-      <td style="font-family:var(--mono);font-size:11px;color:var(--text2)">${ts}</td>
-      <td>
-        <button class="btn btn-red btn-sm" onclick="addToBlacklist('','${escAttr(c.phone)}','Kund')">🚫 Blacklista</button>
-      </td>
-    </tr>`;
-  }).join('');
-}
-
-  if (data.session) {
-    const { data: prof } = await SB.from('profiles').select('role').eq('id', data.session.user.id).single();
-    if (prof?.role === 'admin') {
-      currentUser = data.session.user;
-      document.getElementById('sidebar-user').textContent = data.session.user.email;
-      document.getElementById('login-screen').style.display = 'none';
+// ── SESSION CHECK ────────────────────────────────────────────
+SB.auth.getSession().then(({ data: { session } }) => {
+  if (!session) return;
+  SB.from('profiles').select('role').eq('id', session.user.id).maybeSingle().then(({ data: p }) => {
+    if (!p || p.role === 'admin') {
+      document.getElementById('loginScreen').style.display = 'none';
+      document.getElementById('appShell').style.display = 'flex';
       init();
     }
-  }
-})();
+  });
+});
 </script>
 </body>
 </html>
